@@ -22,7 +22,7 @@
 #include <assert.h>
 
 #define DEVELOPERS \
-        "Iman S. H. Suyoto\n"
+    "Iman S. H. Suyoto\n"
 #define ARGI_IDX_FN 1
 #define ARGI_SEQ_FN 2
 #define MIN_ARGC 3
@@ -121,20 +121,20 @@ static int write_uint
                      -1 : result + 2;
             if (result < 0) {
                 is_finished = 1;
-        } else {
-                x >>= 8;
+            } else {
+                    x >>= 8;
+            }
         }
-    }
-} else {
+    } else {
         if (x == 0) {
             p = fputc(0, ostream);
             return (p == EOF) ? -1 : 1;
-    }
+        }
         p = 0;
         while (!is_finished) {
             if (x == 0) {
                 is_finished = 1;
-        } else {
+            } else {
                 ob = x & 0x07;    /* 0000 ?... */
                 p = 1;
                 if (x >>= 3) {   /* any more bits? */
@@ -142,15 +142,15 @@ static int write_uint
                     ++p;
                     if (x >>= 3) {    /* any more bits? */
                         ob |= 0x80;    /* 1... 1... */
+                    }
                 }
-            }
                 result = (fputc(ob, ostream) == EOF) ? -1 : result + p;
                 if (result < 0) {
                     is_finished = 1;
+                }
             }
         }
     }
-}
     return result;
 }
 
@@ -168,7 +168,7 @@ static unsigned long ulpow(unsigned long x, unsigned long y)
 
     for (c = 0; c < y; c++) {
         result *= x;
-}
+    }
     return result;
 }
 
@@ -200,10 +200,10 @@ static int get_entry_num(char * ng, size_t * num)
         if (p) {  /* if found */
             d = p - symbols;
             *num = nos * *num + d;
-    } else {  /* if not found */
+        } else {  /* if not found */
             return 0;    /* bail out */
+        }
     }
-}
     return 1;
 }
 
@@ -233,7 +233,7 @@ static ng_idx_t *ng_init(void)
     num_of_entries = ulpow(nos, nog);
     if (num_of_entries >= SIZE_T_MAX_) {
         return NULL;
-}
+    }
 
     /* allocate memory for index */
     result = malloc(sizeof *result);
@@ -247,8 +247,8 @@ static ng_idx_t *ng_init(void)
                 result->entries[c].doc_nums = NULL;
         }
     } else {
-            free(result);
-            result = NULL;
+        free(result);
+        result = NULL;
     }
 }
     return result;
@@ -495,7 +495,7 @@ static bld_stat_t build_index
 
 /* main function */
 
-int main(int argc, char ** argv)
+int main(int argc, char **argv)
 {
     int result = EXIT_SUCCESS;
 
