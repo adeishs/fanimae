@@ -135,16 +135,18 @@ static int write_uint
             if (x == 0) {
                 is_finished = 1;
             } else {
-                ob = x & 0x07;    /* 0000 ?... */
+                ob = x & 0x07;  /* 0000 ?... */
                 p = 1;
-                if (x >>= 3) {   /* any more bits? */
-                    ob |= 0x08 | ((x & 0x07) << 4u);    /* ?... 1... */
+                if (x >>= 3) {  /* any more bits? */
+                    /* ?... 1... */
+                    ob |= 0x08 | ((x & 0x07) << 4u);
                     ++p;
-                    if (x >>= 3) {    /* any more bits? */
-                        ob |= 0x80;    /* 1... 1... */
+                    if (x >>= 3) {  /* any more bits? */
+                        ob |= 0x80;  /* 1... 1... */
                     }
                 }
-                result = (fputc(ob, ostream) == EOF) ? -1 : result + p;
+                result = (fputc(ob, ostream) == EOF) ?
+                         -1 : result + p;
                 if (result < 0) {
                     is_finished = 1;
                 }
@@ -186,7 +188,7 @@ static int get_entry_num(char * ng, size_t * num)
     num_of_grams_t n;
     const num_of_symbols_t nos = P_DM12_ALPHABET_SIZE;
     const num_of_grams_t nog = NUM_OF_GRAMS;
-    const char * symbols = P_DM12_ALPHABET;
+    const char *symbols = P_DM12_ALPHABET;
 
     assert(!!ng && !!num);
     assert(strlen(ng) >= nog);
@@ -296,8 +298,11 @@ static int ng_put
         int is_exist;
 
         is_exist = 0;
-        /* find if document number already exists in postings */
-        for (d = 0; (d < entry->num_of_docs) && !is_exist; d++) {
+        /* find if document number already exists in
+         * postings
+         */
+        for (d = 0; (d < entry->num_of_docs) && !is_exist;
+             d++) {
             if (entry->doc_nums[d] == doc_num) {
                 return 1;
             }
@@ -311,7 +316,8 @@ static int ng_put
                           sizeof *(entry->doc_nums));
             if (tmp) {
                 entry->doc_nums = tmp;
-                entry->doc_nums[entry->num_of_docs - 1] = doc_num;
+                entry->doc_nums[entry->num_of_docs - 1] =
+                doc_num;
             } else {
                 --(entry->num_of_docs);
                 result = 0;
@@ -367,7 +373,9 @@ static int ng_save(ng_idx_t *idx, FILE *ng_fp, FILE *il_fp)
         assert(pos >= 0);
         p = write_uint(ng_fp, (pos & 0xffffffff), POS_SIZE);
         P_CHECK;
-        /* write the number of documents containing the n-gram */
+        /* write the number of documents containing the
+         * n-gram
+         */
         p = write_uint(il_fp, entry->num_of_docs, 0);
         P_CHECK;
         if (entry->num_of_docs > 1) {
@@ -454,8 +462,9 @@ static bld_stat_t build_index
            (buf = oakpark_get_line(seq_fp, &buf_len))) {
         char *title;
         char *p_seq;
- 
-        buf[--buf_len] = '\0';  /* get rid of the ending '\n' */
+
+        /* get rid of the ending '\n' */
+        buf[--buf_len] = '\0';
         title = buf;
         p_seq = strstr(buf, "***");
         if (p_seq) {
@@ -464,7 +473,8 @@ static bld_stat_t build_index
             if (!index_sequence(p_idx, p_seq, song_num)) {
                 result = BLD_STAT_ERR_ADD_IDX;
                 fprintf
-                (stderr, "\nError when inserting song %s\n", title);
+                (stderr, "\nError when inserting song %s\n",
+                 title);
             }
         }
         fprintf(dl_fp, "%s\n", title);
@@ -516,32 +526,40 @@ int main(int argc, char **argv)
 
         /* allocate spaces for filenames */
         if ((p_ilp_fn =
-             malloc(idx_fn_len + P_INVLISTPTR_SUFFIX_LEN + 1)) &&
+             malloc(idx_fn_len + P_INVLISTPTR_SUFFIX_LEN + 1))
+            &&
             (p_il_fn =
              malloc(idx_fn_len + P_INVLIST_SUFFIX_LEN + 1)) &&
             (dl_fn =
              malloc(idx_fn_len + DOCLOOKUP_SUFFIX_LEN + 1))) {
-            sprintf(p_ilp_fn, "%s" P_INVLISTPTR_SUFFIX, idx_fn);
-            sprintf(p_il_fn, "%s" P_INVLIST_SUFFIX, idx_fn);
-            sprintf(dl_fn, "%s" DOCLOOKUP_SUFFIX, idx_fn);
+            sprintf(p_ilp_fn,
+                    "%s" P_INVLISTPTR_SUFFIX, idx_fn);
+            sprintf(p_il_fn,
+                    "%s" P_INVLIST_SUFFIX, idx_fn);
+            sprintf(dl_fn,
+                    "%s" DOCLOOKUP_SUFFIX, idx_fn);
         } else {
             fprintf(stderr, "Memory allocation error " IN_LOC);
             goto BAIL_OUT;
         }
         if (!(p_ilp_fp = fopen(p_ilp_fn, "wb"))) {
-            fprintf(stderr, "Failed opening %s " IN_LOC, p_ilp_fn);
+            fprintf(stderr, "Failed opening %s " IN_LOC,
+                    p_ilp_fn);
             goto BAIL_OUT;
         }
         if (!(p_il_fp = fopen(p_il_fn, "wb"))) {
-            fprintf(stderr, "Failed opening %s " IN_LOC, p_il_fn);
+            fprintf(stderr, "Failed opening %s " IN_LOC,
+                    p_il_fn);
             goto BAIL_OUT;
         }
         if (!(dl_fp = fopen(dl_fn, "w"))) {
-            fprintf(stderr, "Failed opening %s " IN_LOC, dl_fn);
+            fprintf(stderr, "Failed opening %s " IN_LOC,
+                    dl_fn);
             goto BAIL_OUT;
         }
         if (!(seq_fp = fopen(seq_fn, "r"))) {
-            fprintf(stderr, "Failed opening %s " IN_LOC, seq_fn);
+            fprintf(stderr, "Failed opening %s " IN_LOC,
+                    seq_fn);
             goto BAIL_OUT;
         }
         fprintf(stderr, "Indexing %s...\n", seq_fn);
@@ -553,20 +571,24 @@ int main(int argc, char **argv)
                 fprintf(stderr, " DONE!\n");
                 break;
             case BLD_STAT_ERR_READ_SEQ:
-                fprintf(stderr, "Error reading %s " IN_LOC, seq_fn);
+                fprintf(stderr, "Error reading %s " IN_LOC,
+                        seq_fn);
                 break;
             case BLD_STAT_ERR_WRITE_P_ILP:
-                fprintf(stderr, "Error writing %s " IN_LOC, p_ilp_fn);
+                fprintf(stderr, "Error writing %s " IN_LOC,
+                        p_ilp_fn);
                 break;
             case BLD_STAT_ERR_WRITE_P_IL:
-                fprintf(stderr, "Error writing %s " IN_LOC, p_il_fn);
+                fprintf(stderr, "Error writing %s " IN_LOC,
+                        p_il_fn);
                 break;
             case BLD_STAT_ERR_WRITE_DL:
-                fprintf(stderr, "Error writing %s " IN_LOC, dl_fn);
+                fprintf(stderr, "Error writing %s " IN_LOC,
+                        dl_fn);
                 break;
             case BLD_STAT_ERR_INIT_IDX_STRUCT:
-                fprintf(stderr, "Error initializing index structure "
-                                IN_LOC);
+                fprintf(stderr, "Error initializing index "
+                                "structure " IN_LOC);
                 break;
             default:
                 fprintf(stderr, "\nInvalid build_status: %d "
