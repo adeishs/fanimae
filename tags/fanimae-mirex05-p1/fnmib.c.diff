@@ -1,0 +1,6 @@
+56a57
+>                          fp = NULL; \
+575c576
+<     fclose(seq_fp);
+---
+>     close_file(seq_fp);
