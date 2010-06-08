@@ -55,7 +55,7 @@ typedef enum bld_stat {
     if (fp) {\
         fclose(fp); \
         fp = NULL; \
-}
+    }
 #define IN_LOC "in " __FILE__ ":" XSTR(__LINE__) "\n"
 
 /*
@@ -265,7 +265,7 @@ static void ng_destroy(ng_idx_t *idx)
     const num_of_symbols_t nos = P_DM12_ALPHABET_SIZE;
     const num_of_grams_t nog = NUM_OF_GRAMS;
 
-    assert(idx != NULL);
+    assert(!!idx);
     for (c = 0; c < ulpow(nos, nog); c++) {
         free(idx->entries[c].doc_nums);
 }
@@ -288,7 +288,7 @@ static int ng_put
     int result;
     size_t entry_num;
 
-    assert((idx != NULL) && (item != NULL));
+    assert(!!idx && !!item);
     result = get_entry_num(item, &entry_num);
     if (result) {
         ng_idx_entry_t * entry = &(idx->entries[entry_num]);
@@ -352,7 +352,7 @@ static int ng_save(ng_idx_t *idx, FILE *ng_fp, FILE *il_fp)
      */
     long pos;
 
-    assert((idx != NULL) && (ng_fp != NULL) && (il_fp != NULL));
+    assert(!!idx && !!ng_fp && !!il_fp);
     /* iterate through all possible entries. N-grams are not
      * stored
      */
@@ -401,7 +401,7 @@ static int index_sequence
     size_t sc;
     char ngram[NUM_OF_GRAMS + 1];
 
-    assert((idx != NULL) && (seq != NULL));
+    assert(!!idx && !!seq);
     seq_len = strlen(seq);
     if (seq_len < NUM_OF_GRAMS) {
         return 1;
@@ -436,9 +436,9 @@ static bld_stat_t build_index
     ng_idx_t *p_idx;
     doc_num_t song_num = 0;
 
-    assert((seq_fp != NULL) &&
-           (p_ilp_fp != NULL) && (p_il_fp != NULL) &&
-           (dl_fp != NULL));
+    assert(!!seq_fp &&
+           !!p_ilp_fp && !!p_il_fp &&
+           !!dl_fp);
     fprintf(stderr, "Initializing index structure...\n");
     p_idx = ng_init();
     if (!p_idx) {
