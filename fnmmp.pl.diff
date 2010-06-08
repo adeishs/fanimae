@@ -1,0 +1,191 @@
+7c7
+< # Copyright 2004--2006 by RMIT MIRT Project.
+---
+> # Copyright 2004--2005 by RMIT MIRT Project.
+11c11
+< #
+---
+> # 
+23,24d22
+< my $PITCH_IDX = 0;
+< my $ONSET_IDX = 1;
+26a25
+> my $query_mode = ($ARGV[2] eq "q");
+32c31
+<     process_dir($dir, $out_fh);
+---
+>     process_dir($dir, $out_fh, $query_mode);
+43d41
+<                "Iman S. H. Suyoto\n" .
+51,57d48
+< #
+< # sub: process_file
+< # parameter: $filename: MIDI filename (with full path)
+< #            $short_filename: shortened MIDI filename
+< #            $out_fh: output filehandle
+< #            $query_mode: whether the output is a query
+< # 
+64d54
+<     my @tracks = $opus->tracks();
+66c56
+<     foreach my $track(@tracks)
+---
+>     foreach my $track($opus->tracks())
+69,74c59,65
+<       # a note is expressed as a tuple of
+<       # <pitch-num, onset-time>
+<       my @note_tuples = ();
+<       # collect pitches
+<       foreach my $n_r(@$score_r)
+<       { my @n = @$n_r;
+---
+>       my $sorted_score_r =
+>       MIDI::Score::sort_score_r($score_r);
+>       my @notes = ();
+>       my @durs = ();
+>       my @prev = ();
+>       foreach my $notes_r(@$score_r)
+>       { my @n = @$notes_r;
+77,101c68,100
+<            ($n[$START_TICK] >= 0) &&
+<            ($n[$DURATION] > 0))
+<         { my @n_tuple = ($n[$PITCH], $n[$START_TICK]);
+<           my $n_tuple = \@n_tuple;
+<           push @note_tuples, $n_tuple;
+<           }
+<         }
+<       # sort note
+<       @note_tuples = sort note_cmp @note_tuples;
+<       # get "melody line"
+<       my @pitches = ();
+<       my @curr = ();
+<       my @next = ();
+<       my $curr_r;
+<       my $next_r;
+<       for(my $n = 0; $n < $#note_tuples; ++$n)
+<       { $curr_r = $note_tuples[$n];
+<         @curr = @$curr_r;
+<         $next_r = $note_tuples[$n + 1];
+<         @next = @$next_r;
+<         # this ensures only the lowest pitch at a specific
+<         # onset time will be pushed
+<         if($curr[$ONSET_IDX] != $next[$ONSET_IDX])
+<         { push @pitches, $curr[$PITCH_IDX];
+<           }
+---
+>            ($n[$START_TICK] > 0))
+>         { if(@prev)
+> 	  { # compare with previous note
+>             # if overlapping
+>             if($n[$START_TICK] == $prev[$START_TICK])
+>             { # take the highest note
+>               if($n[$PITCH] > $prev[$PITCH])
+>               { @prev = @n;
+>                 }
+>               }
+>             else
+>             { # if partially overlapping (next note starts before
+>               # previous note stops)
+>               if($prev[$DURATION] >
+>                  $n[$START_TICK] - $prev[$START_TICK])
+>               { $prev[$DURATION] =
+>                 $n[$START_TICK] - $prev[$START_TICK];
+>                 $durs[$#durs] = $prev[$DURATION];
+>                 }
+>               if($n[$DURATION] > 0)
+>               { push @notes, $n[$PITCH];
+>                 push @durs, $n[$DURATION];
+>                 }
+>               }
+>             }
+>           else
+>           { if($n[$DURATION] > 0)
+>             { push @notes, $n[$PITCH];
+>               push @durs, $n[$DURATION];
+>               }
+>             }
+> 	  @prev = @n;
+> 	  }
+103,104d101
+<       push @pitches, $next[$PITCH_IDX];
+<       # standardize the pitches
+107c104
+<       print $out_fh directed_mod_12(@pitches);
+---
+>       print $out_fh directed_mod_12(@notes);
+114,135d110
+< #
+< # sub: note_cmp
+< # a helper sub for sort
+< # sort ascending on onset-time, ascending on pitch-num
+< #
+< sub note_cmp
+< { my @note_a = @$a;
+<   my @note_b = @$b;
+< 
+<   if($note_a[$ONSET_IDX] == $note_b[$ONSET_IDX])
+<   { return($note_a[$PITCH_IDX] <=> $note_b[$PITCH_IDX]);
+<     }
+<   else
+<   { return($note_a[$ONSET_IDX] <=> $note_b[$ONSET_IDX]);
+<     }
+<   }
+< 
+< #
+< # sub: directed_mod_12
+< # parameter: @pitches: melody
+< # return: standardized melody
+< #
+137c112
+< { my @pitches = @_;
+---
+> { my @notes = @_;
+144,146c119,121
+<   for($c = 0; $c < $#pitches; $c++)
+<   { my $now = $pitches[$c + 1];
+<     my $prev = $pitches[$c];
+---
+>   for($c = 0; $c < $#notes; $c++)
+>   { my $now = $notes[$c + 1];
+>     my $prev = $notes[$c];
+155,160c130,151
+< #
+< # sub: process_dir
+< # parameter: $dir_name: directory name containing MIDI files
+< #            $out_fh: output filehandle
+< #            $query_mode: whether the output is a query
+< # 
+---
+> sub dur_ext_contour
+> { my @durs = @_;
+>   my $c;
+>   my $result = "";
+>   for($c = 0; $c < $#durs; $c++)
+>   { my $now = $durs[$c + 1];
+>     my $prev = $durs[$c];
+>     my $ratio;
+>     if($prev > 0)
+>     { $ratio = $now / $prev;
+>       my $e =
+>          ($ratio <= 0.25)?
+>          'S' : ($ratio <= 0.5)?
+>                's' : ($ratio < 2)?
+>                      'R' : ($ratio < 4)?
+>                            'l' : 'L';
+>       $result .= $e;
+>       }
+>     }
+>   return $result;
+>   }
+> 
+186a178,187
+> 
+> sub midi_num_to_name
+> { my $midi_num = $_[0];
+>   my @pitch_names =
+>      ("C", "C#", "D", "D#", "E", "F",
+>       "F#", "G", "G#", "A", "A#", "B");
+>   my $pitch = $midi_num % 12;
+>   return ($pitch_names[$pitch] .
+>           (int($midi_num / 12) - 1));
+>   }
