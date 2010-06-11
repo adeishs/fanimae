@@ -1,13 +1,11 @@
 #!/usr/bin/perl
 
+# $Id$
 #
 # RMIT MIRT Project
-# Fanimae MIDI Parser MIREX 2005 Edition
+# Fanimae MIDI Parser MIREX 2010 Edition
 #
-# Copyright 2004--2006 by RMIT MIRT Project.
-#
-# Developer:
-# Iman S. H. Suyoto
+# Copyright (C) 2004--2010 by RMIT MIRT Project.
 #
 # Filename: fnmmp.pl.
 #
@@ -28,7 +26,7 @@ if ($dir && $out_filename) {
     if (-d $dir) {
         my $out_fh = FileHandle->new();
         open($out_fh, ">$out_filename") or
-        die "Failed creating handle: $!";
+        die "Failed creating handle: $!\n";
         process_dir($dir, $out_fh);
         close($out_fh);
     }
@@ -45,6 +43,7 @@ if ($dir && $out_filename) {
                  "Usage: fnmmp.pl directory output [q]\n\n" .
                  "Specify \"q\" if the output is intended to " .
                  "be a set of query sequences\n\n";
+    exit 1;
 }
 
 #
@@ -56,8 +55,8 @@ if ($dir && $out_filename) {
 # 
 sub process_file {
     my ($filename, $short_filename, $out_fh, $query_mode) = @_;
-    die "Filename not supplied: $!" unless $filename;
-    die "Invalid filehandle: $!" unless $out_fh;
+    die "Filename not supplied: $!\n" unless $filename;
+    die "Invalid filehandle: $!\n" unless $out_fh;
     eval {
         my $opus = MIDI::Opus->new({'from_file' => $filename});
         my @tracks = $opus->tracks();
@@ -159,8 +158,8 @@ sub directed_mod_12 {
 # 
 sub process_dir {
     my ($dir_name, $out_fh, $query_mode) = @_;
-    die "$dir_name is not a directory: $!" unless -d $dir_name;
-    die "Invalid filehandle: $!" unless $out_fh;
+    die "$dir_name is not a directory: $!\n" unless -d $dir_name;
+    die "Invalid filehandle: $!\n" unless $out_fh;
     opendir DH, $dir_name;
     my @filenames = readdir(DH);
     foreach my $filename(@filenames) {
