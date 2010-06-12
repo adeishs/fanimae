@@ -6,9 +6,11 @@ use strict;
 use File::Spec;
 use File::Copy;
 use File::Path;
+use IPC::Run qw(run);
 
 my $EXPECTED_ARGC = 2;
-my $FNM_DIR = ".fnm";
+my $FNM_DIR = '.fnm';
+my $INDEX_FN = 'index';
 my $MAX_NUM_OF_ANSWERS = 10;
 my $CURR_DIR = File::Spec->curdir();
 my $FNMMP_PATH = File::Spec->catfile($CURR_DIR, 'fnmmp.pl');
@@ -20,7 +22,7 @@ sub query($$) {
     my $coll_dir = shift;
     my $index_dir = File::Spec->catdir($coll_dir, $FNM_DIR);
     my $tmp_dir = File::Spec->catdir($index_dir, "query");
-    my @answers = ();
+    my $answer;
     my @cmd;
     my $result;
 
@@ -56,11 +58,22 @@ sub query($$) {
     }
 
     # query
+    my $n = 0;
 
-    # construct answer
+    @cmd = (File::Spec->catfile($CURR_DIR, 'fnms2.pl'),
+            File::Spec->catfile($index_dir, $INDEX_FN), 'q');
+    open QFH, "<$temp_seq_fn"
+    or die "Can't open $temp_seq_fn\n";
+    $result = run \@cmd, \*QFH, \$answer;
+    close QFH;
+
+    if (!$result) {
+        return undef;
+    }
 
     File::Path->remove_tree($tmp_dir);
-    return \@answers;
+    unlink $temp_seq_fn;
+    return $answer;
 }
 
 sub create_index($) {
@@ -84,7 +97,8 @@ sub create_index($) {
     }
 
     # index the sequences in the sequence file
-    my $index_name = "$index_dir/index";
+    my $index_name =
+       File::Spec->catfile($index_dir, $INDEX_FN);
     @cmd = (File::Spec->catfile($CURR_DIR, 'fnmib'),
             $index_name, $temp_seq_fn);
     $result = system @cmd;
@@ -145,13 +159,13 @@ sub main {
         create_index($coll_dir);
     }
 
-    my $answers_ref = query($query_fn, $coll_dir);
+    my $answers = query($query_fn, $coll_dir);
 
     # output answer according to MIREX requirement
     print $query_fn;
-    if (defined $answers_ref) {
+    if (defined $answers) {
         print ' ';
-        print join(@$answers_ref, ' ');
+        print $answers;
     }
     print "\n";
 }
