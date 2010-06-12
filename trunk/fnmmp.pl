@@ -51,10 +51,9 @@ if ($dir && $out_filename) {
 # parameter: $filename: MIDI filename (with full path)
 #            $short_filename: shortened MIDI filename
 #            $out_fh: output filehandle
-#            $query_mode: whether the output is a query
 # 
 sub process_file {
-    my ($filename, $short_filename, $out_fh, $query_mode) = @_;
+    my ($filename, $short_filename, $out_fh) = @_;
     die "Filename not supplied: $!\n" unless $filename;
     die "Invalid filehandle: $!\n" unless $out_fh;
     eval {
@@ -100,8 +99,7 @@ sub process_file {
             }
             push @pitches, $next[$PITCH_IDX];
             # standardize the pitches
-            print $out_fh "$short_filename|$track_num***"
-            unless($query_mode);
+            print $out_fh "$short_filename|$track_num***";
             print $out_fh directed_mod_12(@pitches);
             print $out_fh "\n";
             $track_num++;
@@ -154,10 +152,9 @@ sub directed_mod_12 {
 # sub: process_dir
 # parameter: $dir_name: directory name containing MIDI files
 #            $out_fh: output filehandle
-#            $query_mode: whether the output is a query
 # 
 sub process_dir {
-    my ($dir_name, $out_fh, $query_mode) = @_;
+    my ($dir_name, $out_fh) = @_;
     die "$dir_name is not a directory: $!\n" unless -d $dir_name;
     die "Invalid filehandle: $!\n" unless $out_fh;
     opendir DH, $dir_name;
@@ -167,16 +164,16 @@ sub process_dir {
         if (($filename ne ".") && ($filename ne "..") &&
             ($filename ne "TRANS.TBL")) {
             if (-d $full_filename) {
-                process_dir($full_filename, $out_fh, $query_mode);
+                process_dir($full_filename, $out_fh);
             } else {
                 my $s = rindex $full_filename, "/";
-                if ($s >= 0)
-                { ++$s;
-                  }
+                if ($s >= 0) {
+                    ++$s;
+                }
                 my $short_filename = substr $full_filename, $s;
                 print "$short_filename\n";
-                process_file($full_filename, $short_filename, $out_fh,
-                             $query_mode);
+                process_file($full_filename, $short_filename,
+                             $out_fh);
             }
         }
     }
