@@ -3,29 +3,69 @@
 # $Id$
 
 use strict;
+use File::Spec;
+use File::Copy;
+use File::Path;
 
 my $EXPECTED_ARGC = 2;
 my $FNM_DIR = ".fnm";
 my $MAX_NUM_OF_ANSWERS = 10;
+my $CURR_DIR = File::Spec->curdir();
+my $FNMMP_PATH = File::Spec->catfile($CURR_DIR, 'fnmmp.pl');
 
 main();
 
 sub query($$) {
     my $query_fn = shift;
+    my $coll_dir = shift;
+    my $index_dir = File::Spec->catdir($coll_dir, $FNM_DIR);
+    my $tmp_dir = File::Spec->catdir($index_dir, "query");
     my @answers = ();
+    my @cmd;
+    my $result;
+
+    # copy the query MIDI file to Fanimae working directory
+    # to prevent all the files in the directory containing the
+    # MIDI file to be used as queries
+    my $query_vol;
+    my $query_dir;
+    my $query_base_fn;
+
+    ($query_vol,
+     $query_dir,
+     $query_base_fn) = File::Spec->splitpath($query_fn);
+
+    my $query_path = File::Spec->catpath($query_vol,
+                                         $query_dir, '');
+    my $tmp_query_fn = File::Spec->catfile($tmp_dir,
+                                           $query_base_fn);
+
+    unless (-d $tmp_dir) {
+        mkdir $tmp_dir or die "Can't create $tmp_dir\n";
+    }
+    copy($query_fn, $tmp_query_fn)
+    or die "Copying $query_fn to $tmp_query_fn failed";
 
     # parse query and generate sequence file
+    my $temp_seq_fn = ".fnmmp.qryseq.$$";
+    @cmd = ($FNMMP_PATH, $query_path, $temp_seq_fn);
+    $result = system @cmd;
+
+    if ($result != 0 || !(-f $temp_seq_fn)) {
+        return undef;
+    }
 
     # query
 
     # construct answer
 
-    return @answers;
+    File::Path->remove_tree($tmp_dir);
+    return \@answers;
 }
 
 sub create_index($) {
     my $coll_dir = shift;
-    my $index_dir = "$coll_dir/$FNM_DIR";
+    my $index_dir = File::Spec->catdir($coll_dir, $FNM_DIR);
     my @cmd;
     my $result;
 
@@ -35,17 +75,18 @@ sub create_index($) {
     }
 
     # parse collection files and generate sequence file
-    my $temp_seq_fn = "$index_dir/.fnmmp.seq.$$";
-    @cmd = ('./fnmmp.pl', $coll_dir, $temp_seq_fn);
-    print "@cmd\n";
+    my $temp_seq_fn = ".fnmmp.collseq.$$";
+    @cmd = ($FNMMP_PATH, $coll_dir, $temp_seq_fn);
     $result = system @cmd;
 
     if ($result != 0 || !(-f $temp_seq_fn)) {
         return 0;
     }
+
     # index the sequences in the sequence file
     my $index_name = "$index_dir/index";
-    @cmd = ('./fnmib', $index_name, $temp_seq_fn);
+    @cmd = (File::Spec->catfile($CURR_DIR, 'fnmib'),
+            $index_name, $temp_seq_fn);
     $result = system @cmd;
 
     if ($result != 0 ||
@@ -61,8 +102,9 @@ sub create_index($) {
 
 sub index_found($) {
     my $coll_dir = shift;
+    my $index_dir = File::Spec->catdir($coll_dir, $FNM_DIR);
 
-    unless (-d "$coll_dir/$FNM_DIR") {
+    unless (-d $index_dir) {
         return 0;
     }
     return 1;
@@ -103,13 +145,13 @@ sub main {
         create_index($coll_dir);
     }
 
-    my @answers = query($query_fn, $coll_dir);
+    my $answers_ref = query($query_fn, $coll_dir);
 
     # output answer according to MIREX requirement
     print $query_fn;
-    if (defined @answers) {
+    if (defined $answers_ref) {
         print ' ';
-        print join(@answers, ' ');
+        print join(@$answers_ref, ' ');
     }
     print "\n";
 }
