@@ -95,9 +95,9 @@ while (my $query = prompt()) {  # capture queries
     # rank answers
     my @answers = sort { $H{$b} <=> $H{$a} } keys %H;
     # show only top 30 answers
-    my $num_of_answers = (@answers > 30)? 30 : @answers;
+    my $num_of_answers = (@answers > 10)? 10 : @answers;
     for (my $r = 0; $r < $num_of_answers; $r++) {
-        print "\t$titles[$answers[$r]]");
+        print " $titles[$answers[$r]]";
     }
     undef @ngrams;
     undef %H;
