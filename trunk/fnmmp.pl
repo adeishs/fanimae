@@ -171,7 +171,7 @@ sub process_dir {
                     ++$s;
                 }
                 my $short_filename = substr $full_filename, $s;
-                print "$short_filename\n";
+                print STDERR "$short_filename\n";
                 process_file($full_filename, $short_filename,
                              $out_fh);
             }
