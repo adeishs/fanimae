@@ -50,10 +50,12 @@ sub query($$) {
 
     # parse query and generate sequence file
     my $temp_seq_fn = ".fnmmp.qryseq.$$";
-    @cmd = ($FNMMP_PATH, $query_path, $temp_seq_fn);
-    $result = system @cmd;
+    my $output;
 
-    if ($result != 0 || !(-f $temp_seq_fn)) {
+    @cmd = ($FNMMP_PATH, $query_path, $temp_seq_fn);
+    $result = run \@cmd, undef, \$output;
+
+    if (!$result || !(-f $temp_seq_fn)) {
         return undef;
     }
 
@@ -81,6 +83,7 @@ sub create_index($) {
     my $index_dir = File::Spec->catdir($coll_dir, $FNM_DIR);
     my @cmd;
     my $result;
+    my $output;
 
     # create index dir if not existing
     unless (-d $index_dir) {
@@ -88,11 +91,12 @@ sub create_index($) {
     }
 
     # parse collection files and generate sequence file
-    my $temp_seq_fn = ".fnmmp.collseq.$$";
+    my $temp_seq_fn = File::Spec->catfile($index_dir,
+                                          'sequence');
     @cmd = ($FNMMP_PATH, $coll_dir, $temp_seq_fn);
-    $result = system @cmd;
+    $result = run \@cmd, undef, \$output;
 
-    if ($result != 0 || !(-f $temp_seq_fn)) {
+    if (!$result || !(-f $temp_seq_fn)) {
         return 0;
     }
 
@@ -101,15 +105,14 @@ sub create_index($) {
        File::Spec->catfile($index_dir, $INDEX_FN);
     @cmd = (File::Spec->catfile($CURR_DIR, 'fnmib'),
             $index_name, $temp_seq_fn);
-    $result = system @cmd;
+    $result = run \@cmd, undef, \$output;
 
-    if ($result != 0 ||
+    if (!$result ||
         !(-f "$index_name.fdl") ||
         !(-f "$index_name.filp") ||
         !(-f "$index_name.fipp")) {
         return 0;
     }
-    unlink $temp_seq_fn;
 
     return 1;
 }
@@ -162,10 +165,13 @@ sub main {
     my $answers = query($query_fn, $coll_dir);
 
     # output answer according to MIREX requirement
-    print $query_fn;
     if (defined $answers) {
-        print ' ';
-        print $answers;
+        my @a = split / /, $answers;
+        @a = map {
+            (my $s = $_) =~ s/\0//;
+            $s;
+        } @a;
+        print join(' ', @a);
     }
     print "\n";
 }
