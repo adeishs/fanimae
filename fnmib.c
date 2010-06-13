@@ -267,10 +267,13 @@ static void ng_destroy(ng_idx_t *idx)
     const num_of_symbols_t nos = P_DM12_ALPHABET_SIZE;
     const num_of_grams_t nog = NUM_OF_GRAMS;
 
-    assert(!!idx);
+    if (!idx) {
+        return;
+    }
+
     for (c = 0; c < ulpow(nos, nog); c++) {
         free(idx->entries[c].doc_nums);
-}
+    }
     free(idx->entries);
     free(idx);
 }
@@ -443,6 +446,9 @@ static bld_stat_t build_index
     size_t buf_len;
     ng_idx_t *p_idx;
     doc_num_t song_num = 0;
+    void *tmp = NULL;
+    char *ilp_buf = NULL;
+    char *il_buf = NULL;
 
     assert(!!seq_fp &&
            !!p_ilp_fp && !!p_il_fp &&
@@ -453,8 +459,7 @@ static bld_stat_t build_index
         result = BLD_STAT_ERR_INIT_IDX_STRUCT;
     }
     if (result != BLD_STAT_OK) {
-        free(p_idx);
-        return result;
+        goto BAILOUT;
     }
     fprintf(stderr, "Indexing...");
     fflush(stderr);
@@ -490,16 +495,54 @@ static bld_stat_t build_index
     }
     fprintf(stderr, "\nDONE!\n"
                     "Writing pitch index to file... ");
+
+    /* allocate space as large as possible for output
+     * buffer to write index files. This will hopefully speed
+     * up writing to the index files in practice.
+     */
+    if ((buf_len = SIZE_T_MAX_) > (1LU << 24)) {
+        buf_len = 1LU << 24;
+    }
+    do {
+        if (!(tmp = realloc(ilp_buf, buf_len))) {
+            buf_len >>= 1;
+        }
+    } while (buf_len > BUFSIZ && !tmp);
+    if (tmp) {
+        ilp_buf = tmp;
+        setvbuf(p_ilp_fp, ilp_buf, _IOFBF, buf_len);
+    }
+
+    if ((buf_len = SIZE_T_MAX_) > (1LU << 24)) {
+        buf_len = 1LU << 24;
+    }
+    do {
+        if (!(tmp = realloc(il_buf, buf_len))) {
+            buf_len >>= 1;
+        }
+    } while (buf_len > BUFSIZ && !tmp);
+    if (tmp) {
+        il_buf = tmp;
+        setvbuf(p_il_fp, il_buf, _IOFBF, buf_len);
+    }
+
     fflush(stderr);
     if (!ng_save(p_idx, p_ilp_fp, p_il_fp)) {
         fprintf(stderr, "FAILED\n");
-        return result = BLD_STAT_ERR_WRITE_P_ILP;
+        result = BLD_STAT_ERR_WRITE_P_ILP;
+        goto BAILOUT;
     }
     fprintf(stderr, "DONE!\n"
                     "Destroying in-memory pitch index... ");
     fflush(stderr);
-    ng_destroy(p_idx);
     fprintf(stderr, "DONE!\n");
+BAILOUT:
+    fflush(NULL);
+    setvbuf(p_ilp_fp, NULL, _IOFBF, BUFSIZ);
+    setvbuf(p_il_fp, NULL, _IOFBF, BUFSIZ);
+    free(il_buf);
+    free(ilp_buf);
+    ng_destroy(p_idx);
     return result;
 }
 
@@ -562,6 +605,7 @@ int main(int argc, char **argv)
                     seq_fn);
             goto BAIL_OUT;
         }
+
         fprintf(stderr, "Indexing %s...\n", seq_fn);
         fflush(stderr);
         build_status = build_index
@@ -603,6 +647,7 @@ BAIL_OUT:
         close_file(dl_fp);
         close_file(p_il_fp);
         close_file(p_ilp_fp);
+
         /* release spaces used by filenames */
         free(dl_fn);
         free(p_il_fn);
