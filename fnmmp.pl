@@ -17,9 +17,11 @@ use FileHandle;
 
 my $START_TICK = 1;
 my $DURATION = 2;
+my $CHANNEL = 3;
 my $PITCH = 4;
 my $PITCH_IDX = 0;
 my $ONSET_IDX = 1;
+my $LN_2 = log(2);
 my $dir = $ARGV[0];
 my $out_filename = $ARGV[1];
 if ($dir && $out_filename) {
@@ -31,18 +33,21 @@ if ($dir && $out_filename) {
         close($out_fh);
     }
 } else {
-    print STDERR "RMIT MIRT Project\n" .
-                 "Fanimae MIREX 2005 Edition\n" .
-                 "MIDI Parser\n\n" .
-                 "Developer:\n" .
-                 "Iman S. H. Suyoto\n\n" .
-                 "based on research by:\n" .
-                 "Iman S. H. Suyoto\n" .
-                 "Alexandra L. Uitdenbogerd\n" .
-                 "Justin Zobel\n\n" .
-                 "Usage: fnmmp.pl directory output [q]\n\n" .
-                 "Specify \"q\" if the output is intended to " .
-                 "be a set of query sequences\n\n";
+    print STDERR <<EOT;
+RMIT MIRT Project
+Fanimae MIREX 2005 Edition
+MIDI Parser
+
+Developer:
+Iman S. H. Suyoto
+
+Based on research by:
+Iman S. H. Suyoto
+Alexandra L. Uitdenbogerd
+Justin Zobel
+
+Usage: fnmmp.pl directory output
+EOT
     exit 1;
 }
 
@@ -62,45 +67,56 @@ sub process_file {
         my $track_num = 0;
         foreach my $track(@tracks) {
             my $score_r =
-            MIDI::Score::events_r_to_score_r($track->events_r);
-            # a note is expressed as a tuple of
-            # <pitch-num, onset-time>
-            my @note_tuples = ();
+               MIDI::Score::events_r_to_score_r($track->events_r);
+            my $sorted_score_r =
+               MIDI::Score::sort_score_r($score_r);
+            my @pitches = ();
+            my @iois = ();
+            my @prev = ();
+
             # collect pitches
             foreach my $n_r(@$score_r) {
                 my @n = @$n_r;
-                if (($n[0] eq "note") &&
+                if (($n[$CHANNEL] != 9) &&
+                    ($n[0] eq "note") &&
                     ($n[$DURATION] != -$n[$START_TICK]) &&
-                    ($n[$START_TICK] >= 0) &&
-                    ($n[$DURATION] > 0)) {
-                    my @n_tuple = ($n[$PITCH], $n[$START_TICK]);
-                    my $n_tuple = \@n_tuple;
-                    push @note_tuples, $n_tuple;
+                    ($n[$START_TICK] >= 0)) {
+
+                    if (@prev) {
+                        # compare with previous note
+                        if ($n[$START_TICK] == $prev[$START_TICK]) {
+                            # if overlapping
+                            # take the highest note
+                            if ($n[$PITCH] > $prev[$PITCH]) {
+                                @prev = @n;
+                            }
+                        } else {
+                            $prev[$DURATION] =
+                            $n[$START_TICK] -
+                            $prev[$START_TICK];
+                            $iois[$#iois] = $prev[$DURATION];
+
+                            if ($n[$DURATION] > 0) {
+                                push @pitches, $n[$PITCH];
+                                push @iois, $n[$DURATION];
+                            }
+                        }
+                    } else {
+                        if ($n[$DURATION] > 0) {
+                            push @pitches, $n[$PITCH];
+                            push @iois, $n[$DURATION];
+                        }
+                    }
+                    @prev = @n;
                 }
             }
-            # sort note
-            @note_tuples = sort note_cmp @note_tuples;
-            # get "melody line"
-            my @pitches = ();
-            my @curr = ();
-            my @next = ();
-            my $curr_r;
-            my $next_r;
-            for (my $n = 0; $n < $#note_tuples; ++$n) {
-                $curr_r = $note_tuples[$n];
-                @curr = @$curr_r;
-                $next_r = $note_tuples[$n + 1];
-                @next = @$next_r;
-                # this ensures only the lowest pitch at a specific
-                # onset time will be pushed
-                if ($curr[$ONSET_IDX] != $next[$ONSET_IDX]) {
-                    push @pitches, $curr[$PITCH_IDX];
-                }
-            }
-            push @pitches, $next[$PITCH_IDX];
             # standardize the pitches
-            print $out_fh "$short_filename|$track_num***";
+            print $out_fh "p:$short_filename|$track_num***";
             print $out_fh directed_mod_12(@pitches);
+            print $out_fh "\n";
+            # standardize the IOIs 
+            print $out_fh "i:$short_filename|$track_num***";
+            print $out_fh ioi_ext_contour(@iois);
             print $out_fh "\n";
             $track_num++;
         }
@@ -108,25 +124,9 @@ sub process_file {
 }
 
 #
-# sub: note_cmp
-# a helper sub for sort
-# sort ascending on onset-time, ascending on pitch-num
-#
-sub note_cmp {
-    my @note_a = @$a;
-    my @note_b = @$b;
-
-    if ($note_a[$ONSET_IDX] == $note_b[$ONSET_IDX]) {
-        return($note_a[$PITCH_IDX] <=> $note_b[$PITCH_IDX]);
-    } else {
-        return($note_a[$ONSET_IDX] <=> $note_b[$ONSET_IDX]);
-    }
-}
-
-#
 # sub: directed_mod_12
-# parameter: @pitches: melody
-# return: standardized melody
+# parameter: @pitches: pitches
+# return: standardized pitches
 #
 sub directed_mod_12 {
     my @pitches = @_;
@@ -144,6 +144,33 @@ sub directed_mod_12 {
         my $d = $now <=> $prev;
         $interval *= $d;
         $result .= $symbols[12 + $d * (1 + ($interval - 1) % 12)];
+    }
+    return $result;
+}
+
+#
+# sub: ioi_ext_contour
+# parameter: @durs: durations
+# return: standardized melody
+#
+sub ioi_ext_contour {
+    my @iois = @_;
+    my $c;
+    my $result = "";
+    for ($c = 0; $c < $#iois; $c++) {
+        my $now = $iois[$c + 1];
+        my $prev = $iois[$c];
+        my $ratio;
+        if ($prev > 0) {
+            $ratio = log($now / $prev) / $LN2;
+            my $e = (abs($ratio) < 1) ? 'R' :
+                    (1 <= $ratio && $ratio < 2) ? 'l' :
+                    (2 <= $ratio) ? 'L' :
+                    (-2 < $ratio && $ratio <= -1) ? 's' : 'S';
+            $result .= $e;
+        } else {
+            $result .= "S";
+        }
     }
     return $result;
 }

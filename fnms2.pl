@@ -42,6 +42,12 @@ QUERY_PROMPT:
 while (my $query = prompt()) {  # capture queries
     my %H = ();
     my @ngrams = ();
+
+    $_ = $query;
+    if (!(m/^p:/)) {
+        next QUERY_PROMPT;
+    }
+    $query =~ s/^p://;
     my $num_of_grams;
     if ($use_qid) {
         my $qid;
