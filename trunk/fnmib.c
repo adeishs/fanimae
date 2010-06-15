@@ -449,6 +449,10 @@ static bld_stat_t build_index
     void *tmp = NULL;
     char *ilp_buf = NULL;
     char *il_buf = NULL;
+    static const char *pitch_prefix = "p:";
+    const size_t pitch_prefix_len = strlen(pitch_prefix);
+    static const char *seq_prefix = "***";
+    const size_t seq_prefix_len = strlen(seq_prefix);
 
     assert(!!seq_fp &&
            !!p_ilp_fp && !!p_il_fp &&
@@ -465,16 +469,22 @@ static bld_stat_t build_index
     fflush(stderr);
     while ((result == BLD_STAT_OK) &&
            (buf = oakpark_get_line(seq_fp, &buf_len))) {
-        char *title;
-        char *p_seq;
+        char *title = NULL;
+        char *p_seq = NULL;
 
+        if (strncmp(buf, pitch_prefix, pitch_prefix_len) !=
+            0) {
+            free(buf);
+            continue;
+        }
         /* get rid of the ending '\n' */
+        title = buf + pitch_prefix_len;
         buf[--buf_len] = '\0';
-        title = buf;
-        p_seq = strstr(buf, "***");
+
+        p_seq = strstr(title, seq_prefix);
         if (p_seq) {
             *p_seq = '\0'; 
-            p_seq += strlen("***");
+            p_seq += seq_prefix_len;
             if (!index_sequence(p_idx, p_seq, song_num)) {
                 result = BLD_STAT_ERR_ADD_IDX;
                 fprintf
