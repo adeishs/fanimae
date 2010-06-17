@@ -158,8 +158,8 @@ void output_answers(struct answers *answers)
     struct answer *curr = answers->items +
                           answers->num_of_answers;
 
-    while (curr-- != answers->items) {
-        printf(" %s", curr->title);
+    while (curr != answers->items) {
+        printf(" %s", (--curr)->title);
     }
     printf("\n");
 }
