@@ -11,13 +11,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <errno.h>
 #include <assert.h>
+
+#include "oakpark.h"
 
 #define DEFAULT_NUM_OF_ANSWERS 10
 
 /* answers are organized as min-heap */
 struct answer {
-    double score;
+    double score_sum;
+    double pitch_score;
+    double ioi_score;
     char *title;
 };
 
@@ -29,7 +34,7 @@ struct answers {
 
 /* create a list of answers */
 struct answers *create_answers
-                       (unsigned short max_num_of_answers)
+                (unsigned short max_num_of_answers)
 {
     struct answers *answers = malloc(sizeof *answers);
     unsigned short c = 0;
@@ -50,7 +55,9 @@ struct answers *create_answers
         struct answer *a = answers->items + c;
 
         a->title = NULL;
-        a->score = 0.0;
+        a->score_sum =
+        a->pitch_score =
+        a->ioi_score = 0.0;
     } while (++c < max_num_of_answers);
 bail_out:
     return answers;
@@ -65,22 +72,25 @@ void swap_answers(struct answer *a, struct answer *b)
 }
 
 /* insert an answer */
-void insert_answer(struct answers *answers,
-                   char *title, double score)
+void insert_answer(struct answers *answers, char *title,
+                   double pitch_score, double ioi_score)
 {
     unsigned short n = answers->num_of_answers;
     unsigned short curr = 0;
     struct answer *a = answers->items;
     struct answer *root = a;
+    double score_sum = pitch_score + ioi_score;
 
     /* if the heap is already full, replace the answer with
-     * minimum score, i.e. the root, with the new answer, and
+     * minimum score_sum, i.e. the root, with the new answer, and
      * top-down min-heapify
      */
     if (n == answers->max_num_of_answers) {
         /* replace root */
         root->title = title;
-        root->score = score;
+        root->pitch_score = pitch_score;
+        root->ioi_score = ioi_score;
+        root->score_sum = score_sum;
 
         /* top-down min-heapify */
         while (curr < n) {
@@ -88,10 +98,10 @@ void insert_answer(struct answers *answers,
             unsigned short right = left + 1;
             unsigned short min = curr;
 
-            if (left < n && a[left].score < a[min].score) {
+            if (left < n && a[left].score_sum < a[min].score_sum) {
                 min = left;
             }
-            if (right < n && a[right].score < a[min].score) {
+            if (right < n && a[right].score_sum < a[min].score_sum) {
                 min = right;
             }
             if (min == curr) {
@@ -106,7 +116,9 @@ void insert_answer(struct answers *answers,
          * tail
          */
         a[n].title = title;
-        a[n].score = score;
+        a[n].pitch_score = pitch_score;
+        a[n].ioi_score = ioi_score;
+        a[n].score_sum = score_sum;
 
         /* bottom-up min-heapify to put the new answer at the
          * right place
@@ -115,7 +127,7 @@ void insert_answer(struct answers *answers,
         while (curr > 0) {
             unsigned short parent = curr / 2;
 
-            if (a[parent].score <= score) {
+            if (a[parent].score_sum <= score_sum) {
                 break;
             }
 
@@ -126,17 +138,17 @@ void insert_answer(struct answers *answers,
     }
 }
 
-/* comparison function for qsort() */
+/* answer comparison function for qsort() */
 int cmp_answer(const void *a_v, const void *b_v)
 {
     const struct answer *a = a_v;
     const struct answer *b = b_v;
 
-    return a->score > b->score ? 1 :
-           a->score < b->score ? -1 : 0;
+    return a->score_sum > b->score_sum ? 1 :
+           a->score_sum < b->score_sum ? -1 : 0;
 }
 
-/* sort answers in ascending score order */
+/* sort answers in ascending score_sum order */
 void sort_answers(struct answers *answers)
 {
     qsort(answers->items, answers->num_of_answers,
@@ -177,6 +189,7 @@ int main(int argc, char **argv)
                   DEFAULT_NUM_OF_ANSWERS;
     struct answers *answers = NULL;
     FILE *coll_fp = NULL;
+    char *coll_fn = NULL;
     char *query = NULL;
     size_t query_len = 0;
     char *query_title = NULL;
@@ -185,6 +198,15 @@ int main(int argc, char **argv)
     if (argc != 2) {
         fprintf(stderr, "Usage:\n" \
                         "%s coll-seq\n\n", argv[0]);
+        goto bail_out;
+    }
+    coll_fn = argv[1];
+
+    /* open collection sequence file */
+    errno = 0;
+    if (!(coll_fp = fopen(coll_fn, "r"))) {
+        fprintf(stderr, "Can't open ");
+        perror(coll_fn);
         goto bail_out;
     }
 
@@ -201,6 +223,8 @@ int main(int argc, char **argv)
     }
 
     /* query the collection */
+    while (query = oakpark_get_line(coll_fp, &query_len)) {
+    }
 
     /* present answer */
     query_title = "title";  /* FIXME: it's just a stub */
