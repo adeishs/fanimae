@@ -449,7 +449,7 @@ static bld_stat_t build_index
     void *tmp = NULL;
     char *ilp_buf = NULL;
     char *il_buf = NULL;
-    static const char *pitch_prefix = "p:";
+    static const char *pitch_prefix = "pi:";
     const size_t pitch_prefix_len = strlen(pitch_prefix);
     static const char *seq_prefix = "***";
     const size_t seq_prefix_len = strlen(seq_prefix);
@@ -483,8 +483,15 @@ static bld_stat_t build_index
 
         p_seq = strstr(title, seq_prefix);
         if (p_seq) {
+            char *p_seq_end = NULL;
+
             *p_seq = '\0'; 
             p_seq += seq_prefix_len;
+            p_seq_end = strstr(p_seq, seq_prefix);
+            if (p_seq_end) {
+                *p_seq_end = '\0';
+            }
+
             if (!index_sequence(p_idx, p_seq, song_num)) {
                 result = BLD_STAT_ERR_ADD_IDX;
                 fprintf

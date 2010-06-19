@@ -17,11 +17,15 @@ require Fcntl;
 
 my $NUM_OF_GRAMS = 5;
 my $POS_SIZE = 4;
+
+my $QUERY_PREFIX = "pi:";
+
 my $ARGC = @ARGV;
 if ($ARGC < 1) {
     show_usage();
     exit(1);
 }
+
 # check command line arguments
 my $idx_fn = $ARGV[0];
 my $use_qid = ($ARGV[1] eq 'q');
@@ -42,18 +46,21 @@ QUERY_PROMPT:
 while (my $query = prompt()) {  # capture queries
     my %H = ();
     my @ngrams = ();
+    my $qid;
+    my $ioi;
 
     $_ = $query;
-    if (!(m/^p:/)) {
+    if (!(m/^$QUERY_PREFIX/)) {
         next QUERY_PROMPT;
     }
-    $query =~ s/^p://;
+    $query =~ s/^$QUERY_PREFIX//;
+    ($qid, $query, $ioi) = split /\*\*\*/, $query;
     my $num_of_grams;
+
     if ($use_qid) {
-        my $qid;
-        ($qid, $query) = split /\*\*\*/, $query;
         print "$qid";
     }
+
     # get n-grams
     for (my $ql = 0; $ql <= length($query) - $NUM_OF_GRAMS; ++$ql) {
         my $t = substr($query, $ql, $NUM_OF_GRAMS);

@@ -111,11 +111,10 @@ sub process_file {
                 }
             }
             # standardize the pitches
-            print $out_fh "p:$short_filename|$track_num***";
+            print $out_fh "pi:$short_filename|$track_num***";
             print $out_fh directed_mod_12(@pitches);
-            print $out_fh "\n";
             # standardize the IOIs 
-            print $out_fh "i:$short_filename|$track_num***";
+            print $out_fh '***';
             print $out_fh ioi_ext_contour(@iois);
             print $out_fh "\n";
             $track_num++;
@@ -162,7 +161,7 @@ sub ioi_ext_contour {
         my $prev = $iois[$c];
         my $ratio;
         if ($prev > 0) {
-            $ratio = log($now / $prev) / $LN2;
+            $ratio = log($now / $prev) / $LN_2;
             my $e = (abs($ratio) < 1) ? 'R' :
                     (1 <= $ratio && $ratio < 2) ? 'l' :
                     (2 <= $ratio) ? 'L' :
