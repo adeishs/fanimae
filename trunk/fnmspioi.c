@@ -20,9 +20,7 @@
 
 /* answers are organized as min-heap */
 struct answer {
-    double score_sum;
-    double pitch_score;
-    double ioi_score;
+    double score;
     char *title;
 };
 
@@ -55,9 +53,7 @@ struct answers *create_answers
         struct answer *a = answers->items + c;
 
         a->title = NULL;
-        a->score_sum =
-        a->pitch_score =
-        a->ioi_score = 0.0;
+        a->score = 0.0;
     } while (++c < max_num_of_answers);
 bail_out:
     return answers;
@@ -72,25 +68,28 @@ void swap_answers(struct answer *a, struct answer *b)
 }
 
 /* insert an answer */
-void insert_answer(struct answers *answers, char *title,
-                   double pitch_score, double ioi_score)
+int insert_answer(struct answers *answers, char *title,
+                  double score)
 {
     unsigned short n = answers->num_of_answers;
     unsigned short curr = 0;
     struct answer *a = answers->items;
     struct answer *root = a;
-    double score_sum = pitch_score + ioi_score;
+    size_t title_len = strlen(title);
 
     /* if the heap is already full, replace the answer with
-     * minimum score_sum, i.e. the root, with the new answer, and
+     * minimum score, i.e. the root, with the new answer, and
      * top-down min-heapify
      */
     if (n == answers->max_num_of_answers) {
+        void *tmp = realloc(root->title, title_len + 1);
+
+        if (!tmp) {
+            return 0;
+        }
         /* replace root */
-        root->title = title;
-        root->pitch_score = pitch_score;
-        root->ioi_score = ioi_score;
-        root->score_sum = score_sum;
+        strcpy(root->title = tmp, title);
+        root->score = score;
 
         /* top-down min-heapify */
         while (curr < n) {
@@ -98,14 +97,14 @@ void insert_answer(struct answers *answers, char *title,
             unsigned short right = left + 1;
             unsigned short min = curr;
 
-            if (left < n && a[left].score_sum < a[min].score_sum) {
+            if (left < n && a[left].score < a[min].score) {
                 min = left;
             }
-            if (right < n && a[right].score_sum < a[min].score_sum) {
+            if (right < n && a[right].score < a[min].score) {
                 min = right;
             }
             if (min == curr) {
-                return;
+                return 1;
             }
 
             swap_answers(a + min, a + curr);
@@ -115,10 +114,11 @@ void insert_answer(struct answers *answers, char *title,
         /* the heap isn't full, so put the new answer at the
          * tail
          */
-        a[n].title = title;
-        a[n].pitch_score = pitch_score;
-        a[n].ioi_score = ioi_score;
-        a[n].score_sum = score_sum;
+        if (!(a[n].title = malloc(title_len + 1))) {
+            return 0;
+        }
+        strcpy(a[n].title, title);
+        a[n].score = score;
 
         /* bottom-up min-heapify to put the new answer at the
          * right place
@@ -127,7 +127,7 @@ void insert_answer(struct answers *answers, char *title,
         while (curr > 0) {
             unsigned short parent = curr / 2;
 
-            if (a[parent].score_sum <= score_sum) {
+            if (a[parent].score <= score) {
                 break;
             }
 
@@ -136,6 +136,7 @@ void insert_answer(struct answers *answers, char *title,
         };
         answers->num_of_answers++;
     }
+    return 1;
 }
 
 /* answer comparison function for qsort() */
@@ -144,11 +145,11 @@ int cmp_answer(const void *a_v, const void *b_v)
     const struct answer *a = a_v;
     const struct answer *b = b_v;
 
-    return a->score_sum > b->score_sum ? 1 :
-           a->score_sum < b->score_sum ? -1 : 0;
+    return a->score > b->score ? 1 :
+           a->score < b->score ? -1 : 0;
 }
 
-/* sort answers in ascending score_sum order */
+/* sort answers in ascending score order */
 void sort_answers(struct answers *answers)
 {
     qsort(answers->items, answers->num_of_answers,
@@ -164,13 +165,47 @@ void destroy_answers(struct answers *answers)
     }
 }
 
+/* validate and parse a sequence line */
+int parse_seq(char *seq_line, char **title,
+              char **pitch_seq, char **ioi_seq)
+{
+    const char *seq_line_prefix = "pi:";
+    const char *sep = "***";
+    const size_t seq_line_prefix_len = strlen(seq_line_prefix);
+
+    if (!(strstr(seq_line, seq_line_prefix) == seq_line)) {
+        return 0;
+    }
+    *title = seq_line + seq_line_prefix_len;
+
+    if (!(*pitch_seq =
+          oakpark_tokenize_str(*title, sep))) {
+        return 0;
+    }
+
+    if (!(*ioi_seq = 
+          oakpark_tokenize_str(*pitch_seq, sep))) {
+        return 0;
+    }
+    return 1;
+}
+
+/* calculate similarity */
+int calc_sim(double *sim_score,
+             const char *answer_pitch_seq,
+             const char *query_pitch_seq,
+             const char *answer_ioi_seq,
+             const char *query_ioi_seq)
+{
+    *sim_score = 0;
+    return 1;
+}
+
 /* query the collection */
 int query_coll(FILE *coll_fp, struct answers *answers,
                char *query_pitch_seq, char *query_ioi_seq)
 {
     int result = 0;
-    char *pitch_coll = NULL;
-    char *ioi_coll = NULL;
     char *coll_line = NULL;
     size_t coll_line_len = 0;
 
@@ -182,13 +217,35 @@ int query_coll(FILE *coll_fp, struct answers *answers,
     while ((coll_line =
             oakpark_get_line(coll_fp, &coll_line_len)) !=
            NULL) {
+        char *answer_title = NULL;
+        char *answer_pitch_seq = NULL;
+        char *answer_ioi_seq = NULL;
+        double sim_score = 0;
+
+        /* validate and parse collection answer */
+        if (!parse_seq(coll_line, &answer_title,
+                       &answer_pitch_seq, &answer_ioi_seq)) {
+            break;
+        }
+
+        if (!calc_sim(&sim_score,
+                      answer_pitch_seq, query_pitch_seq,
+                      answer_ioi_seq, query_ioi_seq)) {
+            break;
+        }
+
+        if (!insert_answer(answers, answer_title, sim_score)) {
+            break;
+        }
+
+        free(coll_line);
+    }
+    if (coll_line) {
         free(coll_line);
     }
 
     result = 1;
 bail_out:
-    free(pitch_coll);
-    free(ioi_coll);
     return result;
 }
 
@@ -220,10 +277,6 @@ int main(int argc, char **argv)
     char *coll_fn = NULL;
     char *query = NULL;
     size_t query_len = 0;
-    char *query_title = NULL;
-    const char *query_prefix = "pi:";
-    const char *sep = "***";
-    const size_t query_prefix_len = strlen(query_prefix);
 
     /* validate command line argument */
     if (argc != 2) {
@@ -258,20 +311,11 @@ int main(int argc, char **argv)
            NULL) {
         char *pitch_seq = NULL;
         char *ioi_seq = NULL;
+        char *query_title = NULL;
 
         /* validate and parse query */
-        if (!(strstr(query, query_prefix) == query)) {
-            break;
-        }
-        query_title += query_prefix_len;
-
-        if (!(pitch_seq =
-              oakpark_tokenize_str(query_title, sep))) {
-            break;
-        }
-
-        if (!(ioi_seq = 
-              oakpark_tokenize_str(pitch_seq, sep))) {
+        if (!parse_seq(query, &query_title,
+                       &pitch_seq, &ioi_seq)) {
             break;
         }
 
