@@ -208,16 +208,12 @@ int main(int argc, char **argv)
     struct answers *answers = NULL;
     FILE *coll_fp = NULL;
     char *coll_fn = NULL;
-    char *pitch_query = NULL;
-    size_t pitch_query_len = 0;
-    char *ioi_query = NULL;
-    size_t ioi_query_len = 0;
+    char *query = NULL;
+    size_t query_len = 0;
     char *query_title = NULL;
-    const char *pitch_prefix = "p:";
-    const char *ioi_prefix = "i:";
+    const char *query_prefix = "pi:";
     const char *sep = "***";
-    const size_t pitch_prefix_len = strlen(pitch_prefix);
-    const size_t ioi_prefix_len = strlen(ioi_prefix);
+    const size_t query_prefix_len = strlen(query_prefix);
     const size_t sep_len = strlen(sep);
 
     /* validate command line argument */
@@ -249,29 +245,27 @@ int main(int argc, char **argv)
     }
 
     /* query the collection */
-    while ((pitch_query =
-            oakpark_get_line(stdin, &pitch_query_len)) &&
-           (ioi_query =
-            oakpark_get_line(stdin, &ioi_query_len))) {
+    while ((query = oakpark_get_line(stdin, &query_len)) !=
+           NULL) {
         char *pitch_seq = NULL;
         char *ioi_seq = NULL;
 
-        if (!(pitch_query && ioi_query)) {
-            break;
-        }
         /* validate query */
-        if (!(strstr(pitch_query, pitch_prefix) == pitch_query
-              && strstr(ioi_query, ioi_prefix) == ioi_query)) {
+        if (!(strstr(query, query_prefix) == query)) {
             break;
         }
-        query_title += pitch_prefix_len;
-        if (!((pitch_seq = strstr(query_title, sep)) &&
-              (ioi_seq = strstr(ioi_query + ioi_prefix_len,
-                                sep)))) {
+        query_title += query_prefix_len;
+
+        if (!(pitch_seq = strstr(query_title, sep))) {
             break;
         }
-        *pitch_seq = *ioi_seq = '\0';
+        *pitch_seq = '\0';
         pitch_seq += sep_len;
+
+        if (!(ioi_seq = strstr(pitch_seq, sep))) {
+            break;
+        }
+        *ioi_seq = '\0';
         ioi_seq += sep_len;
 
         /* query the collection */
@@ -286,15 +280,15 @@ int main(int argc, char **argv)
         output_answers(answers);
 
         /* clean up */
-        free(pitch_query), pitch_query = NULL;
-        free(ioi_query), ioi_query = NULL;
+        free(query);
+    }
+    if (query) {
+        free(query);
     }
 
     /* no error, so exit with success status */
     result = EXIT_SUCCESS;
 bail_out:
-    free(pitch_query);
-    free(ioi_query);
     if (coll_fp) {
         fclose(coll_fp);
     }
