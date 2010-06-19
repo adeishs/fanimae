@@ -171,10 +171,20 @@ int query_coll(FILE *coll_fp, struct answers *answers,
     int result = 0;
     char *pitch_coll = NULL;
     char *ioi_coll = NULL;
+    char *coll_line = NULL;
+    size_t coll_line_len = 0;
 
-    if (!(coll_fp && query_pitch_seq && query_ioi_seq)) {
+    if (!(coll_fp && answers &&
+          query_pitch_seq && query_ioi_seq)) {
         goto bail_out;
     }
+
+    while ((coll_line =
+            oakpark_get_line(coll_fp, &coll_line_len)) !=
+           NULL) {
+        free(coll_line);
+    }
+
     result = 1;
 bail_out:
     free(pitch_coll);
@@ -214,7 +224,6 @@ int main(int argc, char **argv)
     const char *query_prefix = "pi:";
     const char *sep = "***";
     const size_t query_prefix_len = strlen(query_prefix);
-    const size_t sep_len = strlen(sep);
 
     /* validate command line argument */
     if (argc != 2) {
@@ -250,23 +259,21 @@ int main(int argc, char **argv)
         char *pitch_seq = NULL;
         char *ioi_seq = NULL;
 
-        /* validate query */
+        /* validate and parse query */
         if (!(strstr(query, query_prefix) == query)) {
             break;
         }
         query_title += query_prefix_len;
 
-        if (!(pitch_seq = strstr(query_title, sep))) {
+        if (!(pitch_seq =
+              oakpark_tokenize_str(query_title, sep))) {
             break;
         }
-        *pitch_seq = '\0';
-        pitch_seq += sep_len;
 
-        if (!(ioi_seq = strstr(pitch_seq, sep))) {
+        if (!(ioi_seq = 
+              oakpark_tokenize_str(pitch_seq, sep))) {
             break;
         }
-        *ioi_seq = '\0';
-        ioi_seq += sep_len;
 
         /* query the collection */
         rewind(coll_fp);
