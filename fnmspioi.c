@@ -164,6 +164,24 @@ void destroy_answers(struct answers *answers)
     }
 }
 
+/* query the collection */
+int query_coll(FILE *coll_fp, struct answers *answers,
+               char *query_pitch_seq, char *query_ioi_seq)
+{
+    int result = 0;
+    char *pitch_coll = NULL;
+    char *ioi_coll = NULL;
+
+    if (!(coll_fp && query_pitch_seq && query_ioi_seq)) {
+        goto bail_out;
+    }
+    result = 1;
+bail_out:
+    free(pitch_coll);
+    free(ioi_coll);
+    return result;
+}
+
 /* output answers */
 void output_answers(struct answers *answers)
 {
@@ -190,9 +208,17 @@ int main(int argc, char **argv)
     struct answers *answers = NULL;
     FILE *coll_fp = NULL;
     char *coll_fn = NULL;
-    char *query = NULL;
-    size_t query_len = 0;
+    char *pitch_query = NULL;
+    size_t pitch_query_len = 0;
+    char *ioi_query = NULL;
+    size_t ioi_query_len = 0;
     char *query_title = NULL;
+    const char *pitch_prefix = "p:";
+    const char *ioi_prefix = "i:";
+    const char *sep = "***";
+    const size_t pitch_prefix_len = strlen(pitch_prefix);
+    const size_t ioi_prefix_len = strlen(ioi_prefix);
+    const size_t sep_len = strlen(sep);
 
     /* validate command line argument */
     if (argc != 2) {
@@ -223,16 +249,52 @@ int main(int argc, char **argv)
     }
 
     /* query the collection */
-    while (query = oakpark_get_line(coll_fp, &query_len)) {
+    while ((pitch_query =
+            oakpark_get_line(stdin, &pitch_query_len)) &&
+           (ioi_query =
+            oakpark_get_line(stdin, &ioi_query_len))) {
+        char *pitch_seq = NULL;
+        char *ioi_seq = NULL;
+
+        if (!(pitch_query && ioi_query)) {
+            break;
+        }
+        /* validate query */
+        if (!(strstr(pitch_query, pitch_prefix) == pitch_query
+              && strstr(ioi_query, ioi_prefix) == ioi_query)) {
+            break;
+        }
+        query_title += pitch_prefix_len;
+        if (!((pitch_seq = strstr(query_title, sep)) &&
+              (ioi_seq = strstr(ioi_query + ioi_prefix_len,
+                                sep)))) {
+            break;
+        }
+        *pitch_seq = *ioi_seq = '\0';
+        pitch_seq += sep_len;
+        ioi_seq += sep_len;
+
+        /* query the collection */
+        rewind(coll_fp);
+        if (!(query_coll(coll_fp, answers,
+                         pitch_seq, ioi_seq))) {
+            break;
+        }
+
+        /* present answers */
+        printf("%s", query_title);
+        output_answers(answers);
+
+        /* clean up */
+        free(pitch_query), pitch_query = NULL;
+        free(ioi_query), ioi_query = NULL;
     }
 
-    /* present answer */
-    query_title = "title";  /* FIXME: it's just a stub */
-    printf("%s", query_title);
-    output_answers(answers);
     /* no error, so exit with success status */
     result = EXIT_SUCCESS;
 bail_out:
+    free(pitch_query);
+    free(ioi_query);
     if (coll_fp) {
         fclose(coll_fp);
     }
