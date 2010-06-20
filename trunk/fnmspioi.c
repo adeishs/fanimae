@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <limits.h>
 #include <errno.h>
 #include <assert.h>
@@ -18,6 +19,8 @@
 
 #define DEFAULT_NUM_OF_ANSWERS 10
 #define IOI_SYMBOLS "SsRlL"
+#define R 38.0
+#define R2 ((R) * (R))
 
 /* answers are organized as min-heap */
 struct answer {
@@ -253,12 +256,17 @@ int calc_sim(double *sim_score,
            malloc((pitch_seq_1_len + 1) * sizeof *matrix);
 
     if (!matrix) {
+        fprintf(stderr, "Can't allocate matrix in %s:%d\n",
+                        __FILE__, __LINE__);
         goto bailout;
     }
     if (pitch_seq_1_len != ioi_seq_1_len ||
         pitch_seq_2_len != ioi_seq_2_len ||
         pitch_seq_1_len == 0 ||
         pitch_seq_2_len == 0) {
+        fprintf(stderr, "Invalid parameters. "
+                        "Pitch and IOI sequences must have "
+                        "the same length.\n");
         goto bailout;
     }
 
@@ -269,6 +277,9 @@ int calc_sim(double *sim_score,
     }
     for (r = 0; r < pitch_seq_1_len + 1; ++r) {
         if (!matrix[r]) {
+            fprintf(stderr,
+                    "Can't allocate matrix in %s:%d\n",
+                    __FILE__, __LINE__);
             goto bailout;
         }
     }
@@ -317,7 +328,9 @@ int calc_sim(double *sim_score,
     }
     ioi_sim = max;
 
-    *sim_score = pitch_sim + ioi_sim;
+    /* calculate the resultant */
+    *sim_score = R2 * pitch_sim * pitch_sim +
+                 ioi_sim * ioi_sim;
     result = 1;
 bailout:
     if (matrix) {
@@ -350,9 +363,13 @@ int query_coll(FILE *coll_fp, struct answers *answers,
         char *answer_ioi_seq = NULL;
         double sim_score = 0;
 
+        coll_line[coll_line_len - 1] = '\0';
         /* validate and parse collection answer */
         if (!parse_seq(coll_line, &answer_title,
                        &answer_pitch_seq, &answer_ioi_seq)) {
+            fprintf(stderr,
+                    "Collection sequence parse failed: %s\n",
+                    coll_line);
             break;
         }
 
@@ -363,6 +380,8 @@ int query_coll(FILE *coll_fp, struct answers *answers,
         }
 
         if (!insert_answer(answers, answer_title, sim_score)) {
+            fprintf(stderr, "Can't insert answer %s.\n",
+                            answer_title);
             break;
         }
 
@@ -403,16 +422,24 @@ int main(int argc, char **argv)
     struct answers *answers = NULL;
     FILE *coll_fp = NULL;
     char *coll_fn = NULL;
+    char *use_qid = NULL;
     char *query = NULL;
     size_t query_len = 0;
 
     /* validate command line argument */
-    if (argc != 2) {
+    if (argc < 2) {
         fprintf(stderr, "Usage:\n" \
-                        "%s coll-seq\n\n", argv[0]);
+                        "%s coll-seq q\n\n"
+                        "Use \"q\" to include query ID",
+                        argv[0]);
         goto bail_out;
     }
-    coll_fn = argv[1];
+    coll_fn = *++argv, argc--;
+    if (argc > 1) {
+        if (strcmp(use_qid = *++argv, "q") != 0) {
+            use_qid = NULL;
+        }
+    }
 
     /* open collection sequence file */
     errno = 0;
@@ -441,9 +468,11 @@ int main(int argc, char **argv)
         char *ioi_seq = NULL;
         char *query_title = NULL;
 
+        query[query_len - 1] = '\0';
         /* validate and parse query */
         if (!parse_seq(query, &query_title,
                        &pitch_seq, &ioi_seq)) {
+            fprintf(stderr, "Invalid query: %s\n", query);
             break;
         }
 
@@ -451,11 +480,16 @@ int main(int argc, char **argv)
         rewind(coll_fp);
         if (!(query_coll(coll_fp, answers,
                          pitch_seq, ioi_seq))) {
+            fprintf(stderr, "Pitch query \"%s\" and "
+                            "IOI query \"%s\" failed\n",
+                            pitch_seq, ioi_seq);
             break;
         }
 
         /* present answers */
-        printf("%s", query_title);
+        if (use_qid) {
+            printf("%s", query_title);
+        }
         output_answers(answers);
 
         /* clean up */
