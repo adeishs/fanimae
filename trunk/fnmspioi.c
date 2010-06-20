@@ -17,6 +17,7 @@
 #include "oakpark.h"
 
 #define DEFAULT_NUM_OF_ANSWERS 10
+#define IOI_SYMBOLS "SsRlL"
 
 /* answers are organized as min-heap */
 struct answer {
@@ -190,15 +191,142 @@ int parse_seq(char *seq_line, char **title,
     return 1;
 }
 
+long lmax(long a, long b)
+{
+    return a > b ? a : b;
+}
+
+static int sym_map(const char a)
+{
+    static const char symbols[] = IOI_SYMBOLS;
+    char *p = strchr(symbols, a);
+
+    if (!p) {
+        return -1;
+    }
+
+    return p - symbols;
+}
+
+static int mx(const char a, const char b)
+{
+    static const char symbols[] = IOI_SYMBOLS;
+    static const int match_matrix
+                     [sizeof symbols - 1]
+                     [sizeof symbols - 1] = {
+        { +1,  0, -3, -3, -3 },
+        {  0, +2, -2, -3, -3 },
+        { -3, -2, +3, -2, -3 },
+        { -3, -3, -2, +2,  0 },
+        { -3, -3, -3,  0, +1 }
+    };
+    int a_m = sym_map(a);
+    int b_m = sym_map(b);
+
+    if (a_m < 0 || b_m < 0 ||
+        a_m > sizeof symbols - 1 ||
+        b_m > sizeof symbols - 1) {
+        return INT_MIN;
+    }
+
+    return match_matrix[a_m][b_m];
+}
+
 /* calculate similarity */
 int calc_sim(double *sim_score,
-             const char *answer_pitch_seq,
-             const char *query_pitch_seq,
-             const char *answer_ioi_seq,
-             const char *query_ioi_seq)
+             const char *pitch_seq_1,
+             const char *pitch_seq_2,
+             const char *ioi_seq_1,
+             const char *ioi_seq_2)
 {
-    *sim_score = 0;
-    return 1;
+    int result = 0;
+    long pitch_sim = 0;
+    long ioi_sim = 0;
+    long max = 0;
+    size_t r = 0;
+    size_t c = 0;
+    const size_t pitch_seq_1_len = strlen(pitch_seq_1);
+    const size_t pitch_seq_2_len = strlen(pitch_seq_2);
+    const size_t ioi_seq_1_len = strlen(ioi_seq_1);
+    const size_t ioi_seq_2_len = strlen(ioi_seq_2);
+    long **matrix =
+           malloc((pitch_seq_1_len + 1) * sizeof *matrix);
+
+    if (!matrix) {
+        goto bailout;
+    }
+    if (pitch_seq_1_len != ioi_seq_1_len ||
+        pitch_seq_2_len != ioi_seq_2_len ||
+        pitch_seq_1_len == 0 ||
+        pitch_seq_2_len == 0) {
+        goto bailout;
+    }
+
+    /* allocate memory */
+    for (r = 0; r < pitch_seq_1_len + 1; ++r) {
+        matrix[r] = calloc(pitch_seq_2_len + 1,
+                           sizeof *(matrix[r]));
+    }
+    for (r = 0; r < pitch_seq_1_len + 1; ++r) {
+        if (!matrix[r]) {
+            goto bailout;
+        }
+    }
+
+    /* align pitch sequences */
+    for(r = 1; r < pitch_seq_1_len + 1; ++r) {
+        for(c = 1; c < pitch_seq_2_len + 1; ++c) {
+            static const int m = 1;
+            static const int x = -1;
+            static const int i = -2;
+            long m_score = matrix[r - 1][c - 1] + 
+                           (pitch_seq_1[r - 1] ==
+                            pitch_seq_2[c - 1] ? m : x);
+            long i_score = lmax
+                           (matrix[r - 1][c] + i, 
+                            matrix[r][c - 1] + i);
+
+            matrix[r][c] = lmax(0, lmax(m_score, i_score));
+            max = lmax(max, matrix[r][c]);
+        }
+    }
+    pitch_sim = max;
+
+    /* clear matrix */
+    for (r = 0; r < pitch_seq_1_len + 1; ++r) {
+        for (c = 0; c < pitch_seq_2_len + 1; ++c) {
+            matrix[r][c] = 0;
+        }
+    }
+
+    /* align IOI sequences */
+    max = 0;
+    for(r = 1; r < ioi_seq_1_len + 1; ++r) {
+        for(c = 1; c < ioi_seq_2_len + 1; ++c) {
+            static const int i = -2;
+            long m_score = matrix[r - 1][c - 1] +
+                           mx(pitch_seq_1[r - 1],
+                              pitch_seq_2[c - 1]);
+            long i_score = lmax
+                           (matrix[r - 1][c] + i, 
+                            matrix[r][c - 1] + i);
+
+            matrix[r][c] = lmax(0, lmax(m_score, i_score));
+            max = lmax(max, matrix[r][c]);
+        }
+    }
+    ioi_sim = max;
+
+    *sim_score = pitch_sim + ioi_sim;
+    result = 1;
+bailout:
+    if (matrix) {
+        for (r = 0; r < pitch_seq_1_len + 1; ++r) {
+            free(matrix[r]);
+        }
+    }
+    free(matrix);
+    return result;
 }
 
 /* query the collection */
