@@ -129,11 +129,16 @@ sub create_index($) {
     return 1;
 }
 
-sub index_found($) {
+sub index_up_to_date($) {
     my $coll_dir = shift;
     my $index_dir = File::Spec->catdir($coll_dir, $FNM_DIR);
+    my $coll_dir_modif_time = (stat($coll_dir))[9];
+    my $index_dir_modif_time = (stat($index_dir))[9];
 
     unless (-d $index_dir) {
+        return 0;
+    }
+    if ($coll_dir_modif_time > $index_dir_modif_time) {
         return 0;
     }
     return 1;
@@ -180,7 +185,7 @@ sub main {
         die "File not found: $query_fn\n";
     }
 
-    if (!index_found($coll_dir)) {
+    if (!index_up_to_date($coll_dir)) {
         create_index($coll_dir);
     }
 
