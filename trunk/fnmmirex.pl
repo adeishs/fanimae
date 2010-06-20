@@ -141,7 +141,6 @@ sub index_found($) {
 
 sub print_usage {
     print <<EOT;
-fnmmirex
 Fanimae wrapper for MIREX 2010
 
 Usage:

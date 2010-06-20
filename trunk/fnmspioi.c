@@ -1,11 +1,11 @@
 /*
+ * $Id$
+ *
  * Fanimae MIREX 2010 Edition
  * Search (Pitch and IOI)
  *
  * Copyright 2010 by RMIT MIRT Project.
  * Copyright 2010 by Iman S. H. Suyoto.
- *
- * $Id$
  */
 
 #include <stdio.h>

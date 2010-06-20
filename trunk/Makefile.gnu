@@ -16,4 +16,4 @@ fnmib.o: fnmib.c oakpark.h
 oakpark.o: oakpark.c oakpark.h
 
 clean:
-	rm -f *.o fnmib
+	rm -f *.o fnmib fnmspioi
