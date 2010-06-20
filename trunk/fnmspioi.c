@@ -462,7 +462,8 @@ int main(int argc, char **argv)
     }
 
     /* query the collection */
-    while ((query = oakpark_get_line(stdin, &query_len)) !=
+    while (fprintf(stderr, "pi>\n"), fflush(stderr),
+           (query = oakpark_get_line(stdin, &query_len)) !=
            NULL) {
         char *pitch_seq = NULL;
         char *ioi_seq = NULL;
