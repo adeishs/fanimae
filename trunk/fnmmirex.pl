@@ -195,7 +195,7 @@ sub main {
     if (defined $answers) {
         my @a = split / /, $answers;
         @a = map {
-            (my $s = $_) =~ s/\0//;
+            (my $s = $_) =~ s/\|0//;
             $s;
         } @a;
         print join(' ', @a);
