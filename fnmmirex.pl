@@ -83,6 +83,7 @@ sub query($$$) {
     if (!$result) {
         return undef;
     }
+    chomp($answer);
 
     File::Path->remove_tree($tmp_dir);
     unlink $temp_seq_fn;

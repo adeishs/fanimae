@@ -112,6 +112,7 @@ while (my $query = prompt()) {  # capture queries
     for (my $r = 0; $r < $num_of_answers; $r++) {
         print " $titles[$answers[$r]]";
     }
+    print "\n";
     undef @ngrams;
     undef %H;
     undef @answers;
