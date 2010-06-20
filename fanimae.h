@@ -1,12 +1,11 @@
+/* $Id$ */
+
 #ifndef H__FANIMAE_
 #define H__FANIMAE_
 
 #include <stddef.h>
 
-#define FANIMAE_VERSION "MIREX 2005 Edition"
-#define RESEARCHERS \
-        "Alexandra L. Uitdenbogerd\n" \
-        "Justin Zobel\n"
+#define FANIMAE_VERSION "MIREX 2010 Edition"
 
 #define P_INVLISTPTR_SUFFIX ".fipp"
 #define P_INVLISTPTR_SUFFIX_LEN strlen(P_INVLISTPTR_SUFFIX)

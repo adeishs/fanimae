@@ -1,13 +1,10 @@
 /*
- * RMIT MIRT Project
- * Fanimae Index Builder MIREX 2005 Edition
+ * $Id$
  *
- * Copyright 2004--2005 by RMIT MIRT Project.
+ * Fanimae Index Builder MIREX 2010 Edition
  *
- * Developer:
- * Iman S. H. Suyoto
- *
- * Filename: fnmib.c.
+ * Copyright 2004--2010 by RMIT MIRT Project.
+ * Copyright 2010 by Iman S. H. Suyoto.
  *
  * Requires oakpark v0.2b.
  */
@@ -21,8 +18,6 @@
 #include <limits.h>
 #include <assert.h>
 
-#define DEVELOPERS \
-    "Iman S. H. Suyoto\n"
 #define ARGI_IDX_FN 1
 #define ARGI_SEQ_FN 2
 #define MIN_ARGC 3
@@ -67,13 +62,9 @@ typedef enum bld_stat {
 static void show_usage(char *argv0)
 {
     fprintf(stderr,
-            "RMIT MIRT Project\n"
             "Fanimae " FANIMAE_VERSION "\n"
             "Index Builder\n\n"
-            "Developers:\n" DEVELOPERS "\n"
-            "based on research by:\n"
-            RESEARCHERS "\n\n"
-            "To build an index:\n"
+            "Usage:\n"
             "%s idxfn seqfn\n\n"
             "If idxfn.* exist, they will be overwritten\n\n",
             argv0);

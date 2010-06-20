@@ -2,10 +2,11 @@
 
 # $Id$
 #
-# RMIT MIRT Project
-# Fanimae MIDI Parser MIREX 2010 Edition
+# Fanimae MIREX 2010 Edition
+# MIDI Parser
 #
 # Copyright (C) 2004--2010 by RMIT MIRT Project.
+# Copyright (C) 2010 by Iman S. H. Suyoto
 #
 # Filename: fnmmp.pl.
 #
@@ -34,17 +35,8 @@ if ($dir && $out_filename) {
     }
 } else {
     print STDERR <<EOT;
-RMIT MIRT Project
-Fanimae MIREX 2005 Edition
+Fanimae MIREX 2010 Edition
 MIDI Parser
-
-Developer:
-Iman S. H. Suyoto
-
-Based on research by:
-Iman S. H. Suyoto
-Alexandra L. Uitdenbogerd
-Justin Zobel
 
 Usage: fnmmp.pl directory output
 EOT

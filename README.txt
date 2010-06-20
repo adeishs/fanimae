@@ -1,10 +1,7 @@
-RMIT MIRT
-Fanimae MIREX 2005 Edition
-
-Developer:
-Iman S. H. Suyoto
+Fanimae MIREX 2010 Edition
 
 based on research by:
+Iman S. H. Suyoto
 Alexandra L. Uitdenbogerd
 Justin Zobel
 

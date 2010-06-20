@@ -1,15 +1,12 @@
 #!/usr/bin/perl
 
+# $Id$
 #
-# RMIT MIRT Project
-# Fanimae Search MIREX 2005 Edition
+# Fanimae MIREX 2010 Edition
+# Search (5-gram coordinate matching)
 #
-# Copyright 2004--2005 by RMIT MIRT Project.
-#
-# Developer:
-# Iman S. H. Suyoto
-#
-# Filename: fnms.pl
+# Copyright 2004--2010 by RMIT MIRT Project.
+# Copyright 2010 by Iman S. H. Suyoto.
 #
 
 require IO::File;
