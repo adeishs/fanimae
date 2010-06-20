@@ -8,8 +8,9 @@ use File::Copy;
 use File::Path;
 use IPC::Run qw(run);
 
-my $EXPECTED_ARGC = 2;
+my $EXPECTED_ARGC = 3;
 my $FNM_DIR = '.fnm';
+my $SEQUENCE_FN = 'sequence';
 my $INDEX_FN = 'index';
 my $MAX_NUM_OF_ANSWERS = 10;
 my $CURR_DIR = File::Spec->curdir();
@@ -17,7 +18,8 @@ my $FNMMP_PATH = File::Spec->catfile($CURR_DIR, 'fnmmp.pl');
 
 main();
 
-sub query($$) {
+sub query($$$) {
+    my $algo = shift;
     my $query_fn = shift;
     my $coll_dir = shift;
     my $index_dir = File::Spec->catdir($coll_dir, $FNM_DIR);
@@ -62,8 +64,17 @@ sub query($$) {
     # query
     my $n = 0;
 
-    @cmd = (File::Spec->catfile($CURR_DIR, 'fnms2.pl'),
-            File::Spec->catfile($index_dir, $INDEX_FN), 'q');
+    if ($algo eq 'ngr5') {
+        @cmd = (File::Spec->catfile($CURR_DIR, 'fnms2.pl'),
+                File::Spec->catfile($index_dir, $INDEX_FN),
+                'q');
+    } elsif ($algo eq 'pioi') {
+        @cmd = (File::Spec->catfile($CURR_DIR, 'fnmspioi'),
+                File::Spec->catfile($index_dir, $SEQUENCE_FN),
+                'q');
+    } else {
+        die "Invalid algo\n";
+    }
     open QFH, "<$temp_seq_fn"
     or die "Can't open $temp_seq_fn\n";
     $result = run \@cmd, \*QFH, \$answer;
@@ -92,7 +103,7 @@ sub create_index($) {
 
     # parse collection files and generate sequence file
     my $temp_seq_fn = File::Spec->catfile($index_dir,
-                                          'sequence');
+                                          $SEQUENCE_FN);
     @cmd = ($FNMMP_PATH, $coll_dir, $temp_seq_fn);
     $result = run \@cmd, undef, \$output;
 
@@ -133,7 +144,9 @@ fnmmirex
 Fanimae wrapper for MIREX 2010
 
 Usage:
-fnmmirex.pl /path/to/coll/files/dir/ /path/to/query.mid
+fnmmirex.pl algo /path/to/coll/files/dir/ /path/to/query.mid
+
+algo is either ngr5 or pioi
 
 The collection files must be in MIDI format.
 EOT
@@ -146,23 +159,32 @@ sub main {
         print_usage();
         exit 1;
     }
+    my $arg = 0;
 
-    my $coll_dir = $ARGV[0];
-    my $query_fn = $ARGV[1];
+    my $algo = $ARGV[$arg++];
+    my $coll_dir = $ARGV[$arg++];
+    my $query_fn = $ARGV[$arg++];
 
     # validate parameters
+    for ($algo) {
+        /^(ngr5|pioi)$/ && do {
+            last;
+        };
+        die "Invalid algo.\n";
+    }
+
     unless (-d $coll_dir) {
-        die "Directory not found: $coll_dir";
+        die "Directory not found: $coll_dir\n";
     }
     unless (-e $query_fn) {
-        die "File not found: $query_fn";
+        die "File not found: $query_fn\n";
     }
 
     if (!index_found($coll_dir)) {
         create_index($coll_dir);
     }
 
-    my $answers = query($query_fn, $coll_dir);
+    my $answers = query($algo, $query_fn, $coll_dir);
 
     # output answer according to MIREX requirement
     if (defined $answers) {
