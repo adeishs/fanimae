@@ -429,7 +429,7 @@ int main(int argc, char **argv)
     /* validate command line argument */
     if (argc < 2) {
         fprintf(stderr, "Usage:\n" \
-                        "%s coll-seq q\n\n"
+                        "%s coll-seq [q]\n\n"
                         "Use \"q\" to include query ID",
                         argv[0]);
         goto bail_out;
