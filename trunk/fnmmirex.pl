@@ -12,7 +12,7 @@ my $EXPECTED_ARGC = 3;
 my $FNM_DIR = '.fnm';
 my $SEQUENCE_FN = 'sequence';
 my $INDEX_FN = 'index';
-my $MAX_NUM_OF_ANSWERS = 10;
+my $MAX_NUM_OF_ANSWERS = ($ENV{'FNM_NUM_OF_ANSWERS'} or 10);
 my $CURR_DIR = File::Spec->curdir();
 my $FNMMP_PATH = File::Spec->catfile($CURR_DIR, 'fnmmp.pl');
 
@@ -65,7 +65,7 @@ sub query($$$) {
     my $n = 0;
 
     if ($algo eq 'ngr5') {
-        @cmd = (File::Spec->catfile($CURR_DIR, 'fnms2.pl'),
+        @cmd = (File::Spec->catfile($CURR_DIR, 'fnmsngr5.pl'),
                 File::Spec->catfile($index_dir, $INDEX_FN),
                 'q');
     } elsif ($algo eq 'pioi') {

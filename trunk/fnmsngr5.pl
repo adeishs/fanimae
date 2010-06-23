@@ -14,6 +14,7 @@ require Fcntl;
 
 my $NUM_OF_GRAMS = 5;
 my $POS_SIZE = 4;
+my $MAX_NUM_OF_ANSWERS = ($ENV{'FNM_NUM_OF_ANSWERS'} or 10);
 
 my $QUERY_PREFIX = "pi:";
 
@@ -105,7 +106,8 @@ while (my $query = prompt()) {  # capture queries
     # rank answers
     my @answers = sort { $H{$b} <=> $H{$a} } keys %H;
     # show only top 30 answers
-    my $num_of_answers = (@answers > 10)? 10 : @answers;
+    my $num_of_answers = (@answers > $MAX_NUM_OF_ANSWERS)?
+                         $MAX_NUM_OF_ANSWERS : @answers;
     for (my $r = 0; $r < $num_of_answers; $r++) {
         print " $titles[$answers[$r]]";
     }
@@ -122,11 +124,10 @@ close(ILP_FH);
 # param: none
 # return: none
 # purpose show program usage
-# author: ISHS
 #
 sub show_usage {
     print STDERR "Usage:\n" .
-                 "fnms.pl idx [q]\n\n" .
+                 "fnmsngr5.pl idx [q]\n\n" .
                  "Use \"q\" to include query-ID\n\n";
 }
 
@@ -135,7 +136,6 @@ sub show_usage {
 # param: none
 # return: query
 # purpose: get a query from user
-# author: ISHS
 #
 sub prompt {
     print STDERR "p>\n";
@@ -150,7 +150,6 @@ sub prompt {
 #        $nob: number of bytes;
 #        0 for bitwise compressed integer
 # purpose: read (and optionally decompress) an integer from $fh
-# author: ISHS
 #
 sub read_uint {
     my ($fh, $nob) = @_;
