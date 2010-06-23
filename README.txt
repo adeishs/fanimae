@@ -32,7 +32,7 @@ Both fnmib and fnmspioi require oakpark (included in the
 distribution).  oakpark (see http://oakpark.sourceforge.net)
 is not part of the RMIT MIRT Project.
 
-fnms2 and fnmmp are written in Perl and have been tested
+fnmsngr5 and fnmmp are written in Perl and have been tested
 with perl version 5.10.1. fnmmp requires the MIDI package
 from CPAN.
 
@@ -73,7 +73,7 @@ respectively.
 4. To search using the ngr5 algorithm, perform 4a. To search
 using the pioi algorithm, perform 4b.
 
-4a. Run fnms2.pl to search. fnms.pl expects queries to be
+4a. Run fnmsngr5.pl to search. fnms.pl expects queries to be
 fed from the standard input, e.g.
 
 % ./fnms.pl my-idx < my-query
