@@ -448,7 +448,7 @@ int main(int argc, char **argv)
     if (argc < 2) {
         fprintf(stderr, "Usage:\n" \
                         "%s coll-seq [q]\n\n"
-                        "Use \"q\" to include query ID",
+                        "Use \"q\" to include query ID\n\n",
                         argv[0]);
         goto bail_out;
     }
