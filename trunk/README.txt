@@ -91,6 +91,18 @@ S4. Producing MIREX-compliant results
 NOTE: this has only been tested against the official MIREX 2010
 Symbolic Melodic Similarity dataset.
 
+Make sure that the following CPAN modules are installed:
+
+Fcntl
+File::Spec
+File::Copy
+File::Path
+FileHandle
+IO::File
+IPC::Run
+MIDI
+MIDI::Simple
+
 The fnmmirex.pl wrapper script has been written for the
 purpose of MIREX 2010. Usage:
 
