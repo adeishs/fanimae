@@ -34,6 +34,21 @@ struct answers {
     struct answer *items;
 };
 
+/* clear a list of answers */
+void clear_answers(struct answers *answers)
+{
+    unsigned short c = 0;
+
+    answers->num_of_answers = 0;
+    do {
+        struct answer *a = answers->items + c;
+
+        free(a->title);
+        a->title = NULL;
+        a->score = 0.0;
+    } while (++c < answers->max_num_of_answers);
+}
+
 /* create a list of answers */
 struct answers *create_answers
                 (unsigned short max_num_of_answers)
@@ -54,11 +69,9 @@ struct answers *create_answers
     answers->max_num_of_answers = max_num_of_answers;
     answers->num_of_answers = 0;
     do {
-        struct answer *a = answers->items + c;
-
-        a->title = NULL;
-        a->score = 0.0;
+        answers->items[c].title = NULL;
     } while (++c < max_num_of_answers);
+    clear_answers(answers);
 bail_out:
     return answers;
 }
@@ -164,6 +177,11 @@ void sort_answers(struct answers *answers)
 void destroy_answers(struct answers *answers)
 {
     if (answers) {
+        unsigned short c = 0;
+
+        for (; c < answers->num_of_answers; ++c) {
+            free(answers->items[c].title);
+        }
         free(answers->items);
         free(answers);
     }
