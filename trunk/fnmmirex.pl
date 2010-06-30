@@ -8,7 +8,7 @@ use File::Copy;
 use File::Path;
 use IPC::Run qw(run);
 
-my $EXPECTED_ARGC = 3;
+my $MIN_EXPECTED_ARGC = 2;
 my $FNM_DIR = '.fnm';
 my $SEQUENCE_FN = 'sequence';
 my $INDEX_FN = 'index';
@@ -149,9 +149,12 @@ sub print_usage {
 Fanimae wrapper for MIREX 2010
 
 Usage:
-fnmmirex.pl algo /path/to/coll/files/dir/ /path/to/query.mid
+fnmmirex.pl {!|algo} /coll/files/dir/ query.mid
 
-algo is either ngr5 or pioi
+algo is either "ngr5" or "pioi".
+Use "-" to index or force reindex only without searching. Using
+"ngr5" or "pioi" will also cause an index to be built and
+cached if no cached up-to-date index is found.
 
 The collection files must be in MIDI format.
 EOT
@@ -160,7 +163,7 @@ EOT
 }
 
 sub main {
-    if (@ARGV != $EXPECTED_ARGC) {
+    if (@ARGV < $MIN_EXPECTED_ARGC) {
         print_usage();
         exit 1;
     }
@@ -168,37 +171,57 @@ sub main {
 
     my $algo = $ARGV[$arg++];
     my $coll_dir = $ARGV[$arg++];
-    my $query_fn = $ARGV[$arg++];
+    my $query_fn = undef;
+    my $rebuild_index = 0;
+    my $search = 0;
 
     # validate parameters
     for ($algo) {
+        /^\-$/ && do {
+            $rebuild_index = 1;
+            last;
+        };
         /^(ngr5|pioi)$/ && do {
+            $search = 1;
             last;
         };
         die "Invalid algo.\n";
     }
 
+    if ($search) {
+        $query_fn = $ARGV[$arg++];
+        if (!defined $query_fn) {
+            print_usage();
+            exit 1;
+        }
+
+        unless (-e $query_fn) {
+            die "File not found: $query_fn\n";
+        }
+    }
     unless (-d $coll_dir) {
         die "Directory not found: $coll_dir\n";
     }
-    unless (-e $query_fn) {
-        die "File not found: $query_fn\n";
-    }
 
-    if (!index_up_to_date($coll_dir)) {
+    if (!$rebuild_index) {
+        $rebuild_index = !index_up_to_date($coll_dir);
+    }
+    if ($rebuild_index) {
         create_index($coll_dir);
     }
 
-    my $answers = query($algo, $query_fn, $coll_dir);
+    if ($search) {
+        my $answers = query($algo, $query_fn, $coll_dir);
 
-    # output answer according to MIREX requirement
-    if (defined $answers) {
-        my @a = split / /, $answers;
-        @a = map {
-            (my $s = $_) =~ s/\|0//;
-            $s;
-        } @a;
-        print join(' ', @a);
+        # output answer according to MIREX requirement
+        if (defined $answers) {
+            my @a = split / /, $answers;
+            @a = map {
+                (my $s = $_) =~ s/\|0//;
+                $s;
+            } @a;
+            print join(' ', @a);
+        }
+        print "\n";
     }
-    print "\n";
 }
