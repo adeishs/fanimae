@@ -1,4 +1,4 @@
-Fanimae MIREX 2010 Edition
+Fanimae MIREX 2010 Edition (patch 1)
 
 http://fanimae.sourceforge.net/
 
@@ -106,7 +106,7 @@ MIDI::Simple
 The fnmmirex.pl wrapper script has been written for the
 purpose of MIREX 2010. Usage:
 
-% ./fnmmirex.pl alg /path/to/coll/files/dir/ /path/to/query.mid
+% ./fnmmirex.pl alg /coll/files/dir/ query.mid
 
 alg is either (without quotes) "ngr5" or "pioi".
 
@@ -121,6 +121,20 @@ Usage examples:
 The output will be:
 
 query.mid ans1.mid ans2.mid ans3.mid ... ans10.mid
+
+Separate indexing and searching invocations can be achieved if
+needed.
+
+To only index:
+
+% ./fnmmirex.pl - /coll/files/dir/
+
+To search, simply use the script by specifying the algorithm
+as specified above, e.g.:
+
+./fnmmirex.pl ngr5 essen/midi/ query.mid
+
+./fnmmirex.pl pioi essen/midi/ query.mid
 
 
 S5. License
