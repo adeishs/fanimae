@@ -99,9 +99,13 @@ int insert_answer(struct answers *answers, char *title,
      * top-down min-heapify
      */
     if (n == answers->max_num_of_answers) {
-        void *tmp = realloc(root->title, title_len + 1);
-
-        if (!tmp) {
+        void *tmp = NULL;
+        
+        if (root->score > score) {
+            return 1;
+        }
+        
+        if (!(tmp = realloc(root->title, title_len + 1))) {
             return 0;
         }
         /* replace root */
