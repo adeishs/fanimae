@@ -1,4 +1,4 @@
-Fanimae MIREX 2010 Edition (patch 1)
+Fanimae MIREX 2010 Edition (patch 3)
 
 http://fanimae.sourceforge.net/
 
@@ -76,7 +76,7 @@ using the pioi algorithm, perform 4b.
 4a. Run fnmsngr5.pl to search. fnms.pl expects queries to be
 fed from the standard input, e.g.
 
-% ./fnms.pl my-idx < my-query
+% ./fnmsngr5.pl my-idx < my-query
 
 The answers will be output to the standard output.
 
