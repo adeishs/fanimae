@@ -54,7 +54,7 @@ sub query($$$) {
     my $temp_seq_fn = ".fnmmp.qryseq.$$";
     my $output;
 
-    @cmd = ($FNMMP_PATH, $query_path, $temp_seq_fn);
+    @cmd = ($FNMMP_PATH, $tmp_dir, $temp_seq_fn);
     $result = run \@cmd, undef, \$output;
 
     if (!$result || !(-f $temp_seq_fn)) {
