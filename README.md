@@ -134,4 +134,4 @@ as specified above, e.g.:
 
 ## License
 
-The use of Fanimae is governed by the [MIT Licence](LICENSE.txt).
+The use of Fanimae is governed by the [MIT Licence](LICENCE.md).
