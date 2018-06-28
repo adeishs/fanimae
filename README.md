@@ -132,6 +132,6 @@ as specified above, e.g.:
 ./fnmmirex.pl pioi essen/midi/ query.mid
 ```
 
-## License
+## Licence
 
 The use of Fanimae is governed by the [MIT Licence](LICENCE.md).
