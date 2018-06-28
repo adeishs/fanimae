@@ -8,15 +8,17 @@ implemented: `ngr5` and `pioi`. Refer to the [paper describing
 the algorithms](http://music-ir.org/mirex/abstracts/2010/SU1.pdf).
 
 `ngr5` is the 5-gram coordinate matching implemented in Fanimae
-MIREX 2005 Edition. This is based on Uitdenbogerd and Zobel
-(2002).
+MIREX 2005 Edition. This is based on [Uitdenbogerd and Zobel
+(2002)](http://researchbank.rmit.edu.au/view/rmit:30949/n2002001456.pdf).
 
 `pioi` is the dynamic programming matching described in §7 of
-Suyoto and Uitdenbogerd (2008).
+[Suyoto and Uitdenbogerd
+(2008)](http://researchbank.rmit.edu.au/eserv/rmit:12801/n2006009278.pdf).
 
-Like Fanimae MIREX 2005 Edition, this version also ships with
-a MIDI parser to convert MIDI files into sequence files to
-facilitate searching.
+Like [Fanimae MIREX 2005
+Edition](http://www.music-ir.org/mirex/abstracts/2005/suyoto.pdf),
+this version also ships with a MIDI parser to convert MIDI files into
+sequence files to facilitate searching.
 
 ## Installation
 
@@ -27,7 +29,7 @@ to build the programs. If you are using GCC and GNU Make,
 you can use `Makefile.gnu`.
 
 Both `fnmib` and `fnmspioi` require oakpark (included in the
-distribution). oakpark (see <https://github.com/adeishs/oakpark>)
+distribution). [oakpark](https://github.com/adeishs/oakpark)
 is not part of the RMIT MIRT Project.
 
 `fnmsngr5` and `fnmmp` are written in Perl and have been tested
@@ -132,4 +134,4 @@ as specified above, e.g.:
 
 ## License
 
-The use of Fanimae is governed by the MIT Licence.
+The use of Fanimae is governed by the [MIT Licence](LICENSE.txt).
