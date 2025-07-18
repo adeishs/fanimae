@@ -9,11 +9,11 @@ the algorithms](http://music-ir.org/mirex/abstracts/2010/SU1.pdf).
 
 `ngr5` is the 5-gram coordinate matching implemented in Fanimae
 MIREX 2005 Edition. This is based on [Uitdenbogerd and Zobel
-(2002)](http://researchbank.rmit.edu.au/view/rmit:30949/n2002001456.pdf).
+(2002)](https://www.researchgate.net/publication/2534665_Music_Ranking_Techniques_Evaluated).
 
 `pioi` is the dynamic programming matching described in §7 of
 [Suyoto and Uitdenbogerd
-(2008)](http://researchbank.rmit.edu.au/eserv/rmit:12801/n2006009278.pdf).
+(2008)](https://www.researchgate.net/publication/242527456_The_Effect_of_Using_Pitch_and_Duration_for_Symbolic_Music_Retrieval).
 
 Like [Fanimae MIREX 2005
 Edition](http://www.music-ir.org/mirex/abstracts/2005/suyoto.pdf),
